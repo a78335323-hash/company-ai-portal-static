@@ -1,9 +1,41 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>TEST VERCEL</title>
-</head>
-<body style="background: red; color: white; font-size: 40px;">
-  SE VEDI QUESTO, È PUBLIC/INDEX.HTML
-</body>
-</html>
+<script>
+function applyTheme(company){
+    const body = document.body;
+    const logo = document.getElementById("logo");
+    const btn = document.getElementById("login");
+
+    if(!logo || !btn) return;
+
+    if(company === "Lucagri"){
+        body.style.background="#e0f2e9";
+        btn.style.background="#2ecc71";
+        logo.src="logo.png";
+    } else if(company === "Agrichampion"){
+        body.style.background="#fff3e0";
+        btn.style.background="#f39c12";
+        logo.src="logo2.png";
+    } else if(company === "Cabreganze"){
+        body.style.background="#fffbe0";
+        btn.style.background="#d4af37";
+        logo.src="logo3.jpg";
+    } else {
+        body.style.background="white";
+        btn.style.background="#2ecc71";
+        logo.src="logo.png";
+    }
+}
+
+// Applica tema al caricamento della pagina
+window.onload = () => {
+    const savedCompany = localStorage.getItem('company') || 'Lucagri';
+    document.getElementById('company').value = savedCompany;
+    applyTheme(savedCompany);
+}
+
+// Aggiorna tema al cambio select
+document.getElementById('company').addEventListener('change', e => {
+    const company = e.target.value;
+    localStorage.setItem('company', company);
+    applyTheme(company);
+});
+</script>
