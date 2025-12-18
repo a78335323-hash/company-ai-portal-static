@@ -1,0 +1,40 @@
+<script>
+const body = document.body;
+const btn = document.getElementById("send");
+const emailInput = document.getElementById("email");
+const company = (localStorage.getItem("company") || "Lucagri").trim();
+
+// Funzione tema forgot
+function themeForgot(c) {
+    c = c.trim();
+    if (c === "Lucagri") {
+        body.style.background = "#e0f2e9";
+        btn.style.background = "#2ecc71";
+    } else if (c === "Agrichampion") {
+        body.style.background = "#fff3e0";
+        btn.style.background = "#f39c12";
+    } else if (c === "Cabreganze") {
+        body.style.background = "#fffbe0";
+        btn.style.background = "#d4af37";
+    } else {
+        body.style.background = "white";
+        btn.style.background = "#2ecc71";
+    }
+}
+
+// Applica tema al caricamento
+themeForgot(company);
+
+// Funzione invio email
+function send() {
+    if (!emailInput.value.trim()) return alert("Inserisci email");
+    alert("Se l'email è corretta riceverai le istruzioni.");
+    location.href = "index.html";
+}
+
+// Eventi
+btn.onclick = send;
+document.addEventListener("keydown", e => {
+    if (e.key === "Enter") send();
+});
+</script>
