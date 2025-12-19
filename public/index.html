@@ -1,41 +1,145 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Gestione personale AI</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: white;
+}
+
+.login {
+    background: white;
+    width: 420px;
+    padding: 45px;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    text-align: center;
+    position: relative;
+}
+
+#logo {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 90px;
+}
+
+select, input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 18px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+button {
+    width: 55%;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.forgot {
+    font-size: 12px;
+    color: #2980b9;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="login">
+    <img id="logo" src="logo.png">
+
+    <h2>Gestione personale AI</h2>
+
+    <!-- AZIENDA -->
+    <select id="company">
+        <option value="Lucagri">Lucagri</option>
+        <option value="Agrichampion">Agrichampion</option>
+        <option value="Cabreganze">Cabreganze</option>
+    </select>
+
+    <!-- NOMI -->
+    <select id="user">
+        <option value="">Seleziona nome</option>
+        <option value="Luca">Luca</option>
+        <option value="Mattia">Mattia</option>
+        <option value="Claudia">Claudia</option>
+        <option value="Paolo">Paolo</option>
+        <option value="Matteo">Matteo</option>
+    </select>
+
+    <input type="password" id="password" placeholder="Password">
+
+    <div class="forgot" onclick="location.href='forgot.html'">
+        Hai dimenticato la password?
+    </div>
+
+    <button id="login">Login</button>
+</div>
+
 <script>
-function applyTheme(company){
+function applyTheme(company) {
     const body = document.body;
     const logo = document.getElementById("logo");
     const btn = document.getElementById("login");
 
-    if(!logo || !btn) return;
-
-    if(company === "Lucagri"){
-        body.style.background="#e0f2e9";
-        btn.style.background="#2ecc71";
-        logo.src="logo.png";
-    } else if(company === "Agrichampion"){
-        body.style.background="#fff3e0";
-        btn.style.background="#f39c12";
-        logo.src="logo2.png";
-    } else if(company === "Cabreganze"){
-        body.style.background="#fffbe0";
-        btn.style.background="#d4af37";
-        logo.src="logo3.jpg";
-    } else {
-        body.style.background="white";
-        btn.style.background="#2ecc71";
-        logo.src="logo.png";
+    if (company === "Lucagri") {
+        body.style.background = "#e0f2e9";
+        btn.style.background = "#2ecc71";
+        logo.src = "logo.png";
+    }
+    else if (company === "Agrichampion") {
+        body.style.background = "#fff3e0";
+        btn.style.background = "#f39c12";
+        logo.src = "logo2.png";
+    }
+    else if (company === "Cabreganze") {
+        body.style.background = "#fffbe0";
+        btn.style.background = "#d4af37";
+        logo.src = "logo3.jpg";
     }
 }
 
-// Applica tema al caricamento della pagina
-window.onload = () => {
-    const savedCompany = localStorage.getItem('company') || 'Lucagri';
-    document.getElementById('company').value = savedCompany;
-    applyTheme(savedCompany);
-}
+window.addEventListener("DOMContentLoaded", () => {
+    const companySelect = document.getElementById("company");
+    const userSelect = document.getElementById("user");
+    const loginBtn = document.getElementById("login");
 
-// Aggiorna tema al cambio select
-document.getElementById('company').addEventListener('change', e => {
-    const company = e.target.value;
-    localStorage.setItem('company', company);
-    applyTheme(company);
+    // ripristino azienda
+    const savedCompany = localStorage.getItem("company") || "Lucagri";
+    companySelect.value = savedCompany;
+    applyTheme(savedCompany);
+
+    companySelect.addEventListener("change", () => {
+        localStorage.setItem("company", companySelect.value);
+        applyTheme(companySelect.value);
+    });
+
+    loginBtn.addEventListener("click", () => {
+        if (!userSelect.value) {
+            alert("Seleziona un nome");
+            return;
+        }
+        localStorage.setItem("user", userSelect.value);
+        location.href = "portal.html";
+    });
 });
 </script>
+
+</body>
+</html>
