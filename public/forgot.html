@@ -44,9 +44,7 @@
             cursor: pointer;
             border-radius: 5px;
         }
-        button:hover {
-            opacity: 0.9;
-        }
+        button:hover { opacity: 0.9; }
     </style>
 </head>
 <body>
@@ -66,30 +64,16 @@
 
     <script>
         const companyData = {
-            Lucagri: {
-                logo: '/logo.png',
-                bgColor: '#e0f7fa',
-                textColor: '#006064',
-                accentColor: '#00838f'
-            },
-            Agrichampion: {
-                logo: '/logo2.png',
-                bgColor: '#fff3e0',
-                textColor: '#e65100',
-                accentColor: '#ff6f00'
-            },
-            Cabreganze: {
-                logo: '/logo3.jpg',
-                bgColor: '#f3e5f5',
-                textColor: '#4a148c',
-                accentColor: '#6a1b9a'
-            }
+            Lucagri: { logo: '/logo.png', bgColor: '#e0f7fa', textColor: '#006064', accentColor: '#00838f' },
+            Agrichampion: { logo: '/logo2.png', bgColor: '#fff3e0', textColor: '#e65100', accentColor: '#ff6f00' },
+            Cabreganze: { logo: '/logo3.jpg', bgColor: '#f3e5f5', textColor: '#4a148c', accentColor: '#6a1b9a' }
         };
 
         function applyCompanyTheme() {
-            const company = localStorage.getItem('selectedCompany') || 'Lucagri';
-            const data = companyData[company];
+            const company = localStorage.getItem('selectedCompany');
+            if (!company) return; // se non c’è azienda selezionata, non fare nulla
 
+            const data = companyData[company];
             if (data) {
                 document.documentElement.style.setProperty('--bg-color', data.bgColor);
                 document.documentElement.style.setProperty('--text-color', data.textColor);
@@ -107,7 +91,6 @@
             }
         }
 
-        // Applica tema all'avvio
         applyCompanyTheme();
     </script>
 </body>
