@@ -1,95 +1,114 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="UTF-8">
-<title>Recupera password</title>
-
-<style>
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: white;
-}
-
-.box {
-    background: white;
-    width: 420px;
-    padding: 45px;
-    border-radius: 16px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-    text-align: center;
-}
-
-input {
-    width: 100%;
-    padding: 12px;
-    margin-bottom: 18px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-}
-
-button {
-    width: 55%;
-    padding: 12px;
-    border-radius: 8px;
-    border: none;
-    color: white;
-    font-size: 16px;
-    cursor: pointer;
-    background: #2ecc71;
-}
-
-.back {
-    margin-top: 20px;
-    font-size: 12px;
-    color: #2980b9;
-    cursor: pointer;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recupero Password</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--bg-color, #f0f0f0);
+            color: var(--text-color, #333);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        header img {
+            width: 150px;
+            margin-bottom: 20px;
+        }
+        .social-icons img {
+            width: 50px;
+            margin: 0 10px;
+            cursor: pointer;
+        }
+        .forgot-form {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        input[type="email"], button {
+            padding: 10px;
+            margin: 5px 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: var(--accent-color, #007BFF);
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+    </style>
 </head>
-
 <body>
+    <header>
+        <img id="company-logo" src="/logo.png" alt="Logo Azienda">
+    </header>
 
-<div class="box">
-    <h2>Recupera password</h2>
-
-    <input type="email" placeholder="email@azienda.it">
-
-    <button>Invia</button>
-
-    <div class="back" onclick="location.href='/'">
-        Torna al login
+    <div class="forgot-form">
+        <h2>Recupera la Password</h2>
+        <input type="email" placeholder="Inserisci la tua email" id="email">
+        <button onclick="recoverPassword()">Invia</button>
+        <div class="social-icons">
+            <img src="/gmail.png" alt="Gmail" onclick="window.open('https://mail.google.com', '_blank')">
+            <img src="/outlook.png" alt="Outlook" onclick="window.open('https://outlook.office.com', '_blank')">
+        </div>
     </div>
-</div>
 
-<script>
-function applyTheme(company) {
-    const body = document.body;
-    const btn = document.querySelector("button");
+    <script>
+        const companyData = {
+            Lucagri: {
+                logo: '/logo.png',
+                bgColor: '#e0f7fa',
+                textColor: '#006064',
+                accentColor: '#00838f'
+            },
+            Agrichampion: {
+                logo: '/logo2.png',
+                bgColor: '#fff3e0',
+                textColor: '#e65100',
+                accentColor: '#ff6f00'
+            },
+            Cabreganze: {
+                logo: '/logo3.jpg',
+                bgColor: '#f3e5f5',
+                textColor: '#4a148c',
+                accentColor: '#6a1b9a'
+            }
+        };
 
-    if (company === "Lucagri") {
-        body.style.background = "#e0f2e9";
-        btn.style.background = "#2ecc71";
-    }
-    else if (company === "Agrichampion") {
-        body.style.background = "#fff3e0";
-        btn.style.background = "#f39c12";
-    }
-    else if (company === "Cabreganze") {
-        body.style.background = "#fffbe0";
-        btn.style.background = "#d4af37";
-    }
-}
+        function applyCompanyTheme() {
+            const company = localStorage.getItem('selectedCompany') || 'Lucagri';
+            const data = companyData[company];
 
-window.addEventListener("DOMContentLoaded", () => {
-    const company = localStorage.getItem("company") || "Lucagri";
-    applyTheme(company);
-});
-</script>
+            if (data) {
+                document.documentElement.style.setProperty('--bg-color', data.bgColor);
+                document.documentElement.style.setProperty('--text-color', data.textColor);
+                document.documentElement.style.setProperty('--accent-color', data.accentColor);
+                document.getElementById('company-logo').src = data.logo;
+            }
+        }
 
+        function recoverPassword() {
+            const email = document.getElementById('email').value;
+            if(email) {
+                alert(`Link di recupero inviato a ${email}`);
+            } else {
+                alert('Inserisci una email valida');
+            }
+        }
+
+        // Applica tema all'avvio
+        applyCompanyTheme();
+    </script>
 </body>
 </html>
