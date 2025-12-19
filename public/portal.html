@@ -1,4 +1,46 @@
-﻿const company = localStorage.getItem("company") || "Lucagri";
-if(company === "Lucagri"){ sidebar.style.background="linear-gradient(180deg,#7de3a2,#2ecc71)"; sendBtn.style.background="#2ecc71"; logo.src="logo.png"; }
-else if(company === "Agrichampion"){ sidebar.style.background="linear-gradient(180deg,#ffdba8,#f39c12)"; sendBtn.style.background="#f39c12"; logo.src="logo2.png"; }
-else if(company === "Cabreganze"){ sidebar.style.background="linear-gradient(180deg,#f6e6a8,#d4af37)"; sendBtn.style.background="#d4af37"; logo.src="logo3.jpg"; }
+﻿<script>
+const user = localStorage.getItem("user") || "Utente";
+const company = (localStorage.getItem("company") || "Lucagri").trim();
+
+const avatar = document.getElementById("avatar");
+const profileName = document.getElementById("profileName");
+const sidebar = document.getElementById("sidebar");
+const sendBtn = document.getElementById("send");
+const logo = document.getElementById("logo");
+const logoLink = document.getElementById("logoLink");
+
+// Mostra avatar e nome
+avatar.textContent = user.slice(0,2).toUpperCase();
+profileName.textContent = user;
+
+// Funzione tema portal
+function themePortal(c) {
+    c = c.trim();
+    if (c === "Lucagri") {
+        sidebar.style.background = "linear-gradient(180deg,#7de3a2,#2ecc71)";
+        sendBtn.style.background = "#2ecc71";
+        logo.src = "logo.png";
+        logoLink.href = "https://www.lucagri.it/";
+    } else if (c === "Agrichampion") {
+        sidebar.style.background = "linear-gradient(180deg,#ffdba8,#f39c12)";
+        sendBtn.style.background = "#f39c12";
+        logo.src = "logo2.png";
+        logoLink.href = "https://agrichampion.com/";
+    } else if (c === "Cabreganze") {
+        sidebar.style.background = "linear-gradient(180deg,#f6e6a8,#d4af37)";
+        sendBtn.style.background = "#d4af37";
+        logo.src = "logo3.jpg";
+        logoLink.href = "https://www.cabreganze.com/";
+    } else {
+        // fallback
+        sidebar.style.background = "linear-gradient(180deg,#7de3a2,#2ecc71)";
+        sendBtn.style.background = "#2ecc71";
+        logo.src = "logo.png";
+        logoLink.href = "#";
+    }
+}
+
+// Applica tema al caricamento
+themePortal(company);
+</script>
+

@@ -1,12 +1,67 @@
-<script>
-window.onload = () => {
-    const savedCompany = localStorage.getItem('company') || 'Lucagri';
-    const body = document.body;
-    const btn = document.getElementById("send");
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Recupero password</title>
 
-    if(savedCompany === "Lucagri"){ body.style.background="#e0f2e9"; btn.style.background="#2ecc71"; }
-    else if(savedCompany === "Agrichampion"){ body.style.background="#fff3e0"; btn.style.background="#f39c12"; }
-    else if(savedCompany === "Cabreganze"){ body.style.background="#fffbe0"; btn.style.background="#d4af37"; }
-    else{ body.style.background="white"; btn.style.background="#2ecc71"; }
+<style>
+body {
+    font-family: Arial;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #ecf0f1;
 }
+
+.box {
+    background: white;
+    padding: 50px;
+    width: 420px;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    text-align: center;
+}
+
+input {
+    width: 100%;
+    padding: 12px;
+    margin: 20px 0;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+button {
+    padding: 12px 25px;
+    border-radius: 8px;
+    border: none;
+    background: #3498db;
+    color: white;
+    cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+    <h2>Recupera password</h2>
+    <p>Inserisci la tua email</p>
+    <input id="email" type="email" placeholder="email@azienda.it">
+    <button onclick="send()">Invia</button>
+</div>
+
+<script>
+function send() {
+    if (!email.value) return alert("Inserisci email");
+    alert("Email inviata! Puoi ora accedere.");
+    location.href = "index.html";
+}
+
+document.addEventListener("keydown", e => {
+    if (e.key === "Enter") send();
+});
 </script>
+
+</body>
+</html>

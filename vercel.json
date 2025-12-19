@@ -1,5 +1,8 @@
 {
   "routes": [
-    { "src": "/", "dest": "/public/index.html" }
+    { "src": "^/$", "dest": "/public/index.html" },
+    { "src": "^/forgot$", "dest": "/public/forgot.html" },
+    { "src": "^/portal$", "dest": "/public/portal.html" },
+    { "src": "^/(.*)$", "dest": "/public/$1" }
   ]
 }
