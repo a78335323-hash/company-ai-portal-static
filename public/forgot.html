@@ -2,22 +2,23 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>Recupero password</title>
+<title>Recupera password</title>
 
 <style>
 body {
-    font-family: Arial;
+    font-family: Arial, sans-serif;
+    margin: 0;
     height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    background: #ecf0f1;
+    background: white;
 }
 
 .box {
     background: white;
-    padding: 50px;
     width: 420px;
+    padding: 45px;
     border-radius: 16px;
     box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     text-align: center;
@@ -26,17 +27,26 @@ body {
 input {
     width: 100%;
     padding: 12px;
-    margin: 20px 0;
+    margin-bottom: 18px;
     border-radius: 8px;
     border: 1px solid #ccc;
 }
 
 button {
-    padding: 12px 25px;
+    width: 55%;
+    padding: 12px;
     border-radius: 8px;
     border: none;
-    background: #3498db;
     color: white;
+    font-size: 16px;
+    cursor: pointer;
+    background: #2ecc71;
+}
+
+.back {
+    margin-top: 20px;
+    font-size: 12px;
+    color: #2980b9;
     cursor: pointer;
 }
 </style>
@@ -46,20 +56,38 @@ button {
 
 <div class="box">
     <h2>Recupera password</h2>
-    <p>Inserisci la tua email</p>
-    <input id="email" type="email" placeholder="email@azienda.it">
-    <button onclick="send()">Invia</button>
+
+    <input type="email" placeholder="email@azienda.it">
+
+    <button>Invia</button>
+
+    <div class="back" onclick="location.href='/'">
+        Torna al login
+    </div>
 </div>
 
 <script>
-function send() {
-    if (!email.value) return alert("Inserisci email");
-    alert("Email inviata! Puoi ora accedere.");
-    location.href = "index.html";
+function applyTheme(company) {
+    const body = document.body;
+    const btn = document.querySelector("button");
+
+    if (company === "Lucagri") {
+        body.style.background = "#e0f2e9";
+        btn.style.background = "#2ecc71";
+    }
+    else if (company === "Agrichampion") {
+        body.style.background = "#fff3e0";
+        btn.style.background = "#f39c12";
+    }
+    else if (company === "Cabreganze") {
+        body.style.background = "#fffbe0";
+        btn.style.background = "#d4af37";
+    }
 }
 
-document.addEventListener("keydown", e => {
-    if (e.key === "Enter") send();
+window.addEventListener("DOMContentLoaded", () => {
+    const company = localStorage.getItem("company") || "Lucagri";
+    applyTheme(company);
 });
 </script>
 
