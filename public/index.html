@@ -3,63 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Company AI Portal</title>
+    <title>Recupero Password</title>
     <style>
         body {
             font-family: Arial, sans-serif;
+            background-color: var(--bg-color, #f0f0f0);
+            color: var(--text-color, #333);
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
+            justify-content: center;
             min-height: 100vh;
-            background-color: #f0f0f0;
+            margin: 0;
         }
-        form {
+        header img {
+            width: 150px;
+            margin-bottom: 20px;
+        }
+        .social-icons img {
+            width: 50px;
+            margin: 0 10px;
+            cursor: pointer;
+        }
+        .forgot-form {
             background: white;
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
-        input, select, button {
-            display: block;
-            width: 100%;
-            margin: 10px 0;
+        input[type="email"], button {
             padding: 10px;
+            margin: 5px 0;
+            width: 100%;
             box-sizing: border-box;
         }
         button {
-            background-color: #007BFF;
+            background-color: var(--accent-color, #007BFF);
             color: white;
             border: none;
-            border-radius: 5px;
             cursor: pointer;
+            border-radius: 5px;
         }
-        button:hover { opacity: 0.9; }
+        button:hover {
+            opacity: 0.9;
+        }
     </style>
 </head>
 <body>
-    <form id="login-form">
-        <select id="company-select" required>
-            <option value="Lucagri">Lucagri</option>
-            <option value="Agrichampion">Agrichampion</option>
-            <option value="Cabreganze">Cabreganze</option>
-        </select>
-        <input type="text" id="username" placeholder="Nome utente" required>
-        <button type="submit">Entra</button>
-    </form>
+    <header>
+        <img id="company-logo" src="/logo.png" alt="Logo Azienda">
+    </header>
+
+    <div class="forgot-form">
+        <h2>Recupera la Password</h2>
+        <input type="email" placeholder="Inserisci la tua email" id="email">
+        <button onclick="recoverPassword()">Invia</button>
+        <div class="social-icons">
+            <img src="/gmail.png" alt="Gmail" onclick="window.open('https://mail.google.com', '_blank')">
+            <img src="/outlook.png" alt="Outlook" onclick="window.open('https://outlook.office.com', '_blank')">
+        </div>
+    </div>
 
     <script>
-        document.getElementById('login-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const company = document.getElementById('company-select').value;
-            const username = document.getElementById('username').value;
+        const companyData = {
+            Lucagri: {
+                logo: '/logo.png',
+                bgColor: '#e0f7fa',
+                textColor: '#006064',
+                accentColor: '#00838f'
+            },
+            Agrichampion: {
+                logo: '/logo2.png',
+                bgColor: '#fff3e0',
+                textColor: '#e65100',
+                accentColor: '#ff6f00'
+            },
+            Cabreganze: {
+                logo: '/logo3.jpg',
+                bgColor: '#f3e5f5',
+                textColor: '#4a148c',
+                accentColor: '#6a1b9a'
+            }
+        };
 
-            // Salvo azienda e utente in localStorage
-            localStorage.setItem('selectedCompany', company);
-            localStorage.setItem('username', username);
+        function applyCompanyTheme() {
+            const company = localStorage.getItem('selectedCompany') || 'Lucagri';
+            const data = companyData[company];
 
-            // Reindirizzo al portale
-            window.location.href = 'portal.html';
-        });
+            if (data) {
+                document.documentElement.style.setProperty('--bg-color', data.bgColor);
+                document.documentElement.style.setProperty('--text-color', data.textColor);
+                document.documentElement.style.setProperty('--accent-color', data.accentColor);
+                document.getElementById('company-logo').src = data.logo;
+            }
+        }
+
+        function recoverPassword() {
+            const email = document.getElementById('email').value;
+            if(email) {
+                alert(`Link di recupero inviato a ${email}`);
+            } else {
+                alert('Inserisci una email valida');
+            }
+        }
+
+        // Applica tema all'avvio
+        applyCompanyTheme();
     </script>
 </body>
 </html>
