@@ -129,15 +129,19 @@ window.addEventListener("DOMContentLoaded", () => {
         localStorage.setItem("company", companySelect.value);
         applyTheme(companySelect.value);
     });
+loginBtn.addEventListener("click", () => {
+    if (!userSelect.value) {
+        alert("Seleziona un nome");
+        return;
+    }
 
-    loginBtn.addEventListener("click", () => {
-        if (!userSelect.value) {
-            alert("Seleziona un nome");
-            return;
-        }
-        localStorage.setItem("user", userSelect.value);
-        location.href = "portal.html";
-    });
+    // 🔥 SALVA SEMPRE L'AZIENDA AL LOGIN
+    localStorage.setItem("company", companySelect.value);
+
+    localStorage.setItem("user", userSelect.value);
+    location.href = "portal.html";
+});
+
 });
 </script>
 
