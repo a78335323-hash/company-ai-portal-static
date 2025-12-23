@@ -82,47 +82,46 @@
 
 <script>
     const companyData = {
-        Lucagri: {
-            logo: "/logo.png",
-            bg: "#e0f2e9",
-            accent: "#2ecc71",
-            text: "#145a32"
-        },
-        Agrichampion: {
-            logo: "/logo2.png",
-            bg: "#fff3e0",
-            accent: "#f39c12",
-            text: "#7e5109"
-        },
-        Cabreganze: {
-            logo: "/logo3.jpg",
-            bg: "#fffbe0",
-            accent: "#d4af37",
-            text: "#6e5b16"
-        }
+        Lucagri: { logo: "/logo.png", bg: "#e0f2e9", accent: "#2ecc71", text: "#145a32" },
+        Agrichampion: { logo: "/logo2.png", bg: "#fff3e0", accent: "#f39c12", text: "#7e5109" },
+        Cabreganze: { logo: "/logo3.jpg", bg: "#fffbe0", accent: "#d4af37", text: "#6e5b16" }
     };
 
     function applyCompanyTheme() {
-        const company = localStorage.getItem("company"); // 🔥 CHIAVE GIUSTA
+        const company = localStorage.getItem("company");
         if (!company) return;
-
         const data = companyData[company];
         if (!data) return;
 
         document.documentElement.style.setProperty("--bg-color", data.bg);
         document.documentElement.style.setProperty("--accent-color", data.accent);
         document.documentElement.style.setProperty("--text-color", data.text);
-
         document.getElementById("company-logo").src = data.logo;
     }
 
-    function recoverPassword() {
+    async function recoverPassword() {
         const email = document.getElementById("email").value;
-        if (!email) {
-            alert("Inserisci una email valida");
-            return;
+        if (!email) { 
+            alert("Inserisci una email valida"); 
+            return; 
         }
-        alert("Link di recupero inviato a " + email);
+
+        try {
+            const response = await fetch('http://localhost:3000/forgot-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                alert("Link di recupero generato! Controlla la console del backend per il link e la mail.");
+            } else {
+                alert("Errore: " + (data.message || data.error));
+            }
+        } catch (err) {
+            alert("Errore di connessione al server: " + err);
+        }
     }
 
     applyCompanyTheme();
