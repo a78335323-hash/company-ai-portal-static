@@ -103,7 +103,6 @@ const companyData = {
   Agrichampion: {sidebar:"linear-gradient(180deg,#ffdba8,#f39c12)", send:"#f39c12", logo:"logo2.png", link:"https://agrichampion.com/"},
   Cabreganze: {sidebar:"linear-gradient(180deg,#f6e6a8,#d4af37)", send:"#d4af37", logo:"logo3.jpg", link:"https://www.cabreganze.com/"}
 };
-
 const theme = companyData[company] || companyData.Lucagri;
 sidebar.style.background = theme.sidebar;
 sendBtn.style.background = theme.send;
@@ -117,21 +116,18 @@ function ai(text){
 }
 
 // CRONOLOGIA MESSAGGI
-let chatHistory = []; // memorizza tutti i messaggi della chat in corso
+let chatHistory = [];
 ai("Come posso aiutarti?");
 
-// MEMORIZZA I MESSAGGI NELLA SESSIONE
+// INVIO MESSAGGIO CON MEMORIA
 sendBtn.onclick = async () => {
   const text = msg.value.trim();
   if(!text) return;
 
-  // Mostra messaggio utente e aggiungi alla cronologia
   chat.innerHTML += `<div class="msg-user"><span>${text}</span></div>`;
   chatHistory.push({ role:"user", content:text });
-  msg.value="";
-  msg.style.height="48px";
+  msg.value=""; msg.style.height="48px";
 
-  // Messaggio di attesa
   ai("Sto elaborando la risposta...");
 
   try {
@@ -141,14 +137,10 @@ sendBtn.onclick = async () => {
       body: JSON.stringify({ messages: chatHistory, user: user })
     });
     const data = await res.json();
-
-    // Rimuove "Sto elaborando..."
     chat.lastElementChild.remove();
-
-    // Risposta AI e aggiungi alla cronologia
     ai(data.reply);
     chatHistory.push({ role:"assistant", content:data.reply });
-  } catch (err) {
+  } catch(err) {
     chat.lastElementChild.remove();
     ai("Errore di connessione al server");
   }
