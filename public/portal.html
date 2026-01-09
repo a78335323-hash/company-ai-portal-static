@@ -48,7 +48,7 @@ textarea { flex:1; resize:none; padding:14px; border-radius:12px; border:1px sol
 <body>
 <div class="sidebar" id="sidebar">
   <div>
-    <div class="sidebar-btn" onclick="newChat()">Nuova chat</div>
+    <div class="sidebar-btn" onclick="endChatPrompt(); newChat()">Nuova chat</div>
     <div class="sidebar-btn search-wrapper"><input id="search" placeholder="Cerca chat"></div>
     <div class="sidebar-btn" onclick="showPromemoria()">Promemoria</div>
     <div class="chat-title">Le tue chat</div>
@@ -115,7 +115,76 @@ function ai(text){
   chat.innerHTML += `<div class="msg-ai"><span>${text}</span></div>`;
   chat.scrollTop = chat.scrollHeight;
 }
+
+// CRONOLOGIA MESSAGGI
+let chatHistory = []; // memorizza tutti i messaggi della chat in corso
 ai("Come posso aiutarti?");
+
+// MEMORIZZA I MESSAGGI NELLA SESSIONE
+sendBtn.onclick = async () => {
+  const text = msg.value.trim();
+  if(!text) return;
+
+  // Mostra messaggio utente e aggiungi alla cronologia
+  chat.innerHTML += `<div class="msg-user"><span>${text}</span></div>`;
+  chatHistory.push({ role:"user", content:text });
+  msg.value="";
+  msg.style.height="48px";
+
+  // Messaggio di attesa
+  ai("Sto elaborando la risposta...");
+
+  try {
+    const res = await fetch("https://company-ai-portal-static.onrender.com/chat", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ messages: chatHistory, user: user })
+    });
+    const data = await res.json();
+
+    // Rimuove "Sto elaborando..."
+    chat.lastElementChild.remove();
+
+    // Risposta AI e aggiungi alla cronologia
+    ai(data.reply);
+    chatHistory.push({ role:"assistant", content:data.reply });
+  } catch (err) {
+    chat.lastElementChild.remove();
+    ai("Errore di connessione al server");
+  }
+};
+
+// FINE CHAT - SALVATAGGIO
+function endChatPrompt() {
+  if(chatHistory.length === 0) return;
+  const save = confirm("Vuoi salvare questa chat?");
+  if(save){
+    const name = prompt("Inserisci un nome per la chat:");
+    if(name){
+      localStorage.setItem(`chat_${user}_${name}`, JSON.stringify(chatHistory));
+      const chatItem = document.createElement("div");
+      chatItem.className="chat-item";
+      chatItem.textContent=name;
+      chatItem.onclick = ()=> loadChat(name);
+      document.getElementById("chatList").appendChild(chatItem);
+    }
+  }
+  chat.innerHTML="";
+  chatHistory=[];
+}
+
+// CARICA CHAT SALVATA
+function loadChat(name){
+  const saved = localStorage.getItem(`chat_${user}_${name}`);
+  if(!saved) return;
+  chat.innerHTML="";
+  chatHistory = JSON.parse(saved);
+  chatHistory.forEach(m=>{
+    if(m.role==="user") chat.innerHTML += `<div class="msg-user"><span>${m.content}</span></div>`;
+    else chat.innerHTML += `<div class="msg-ai"><span>${m.content}</span></div>`;
+  });
+  inputBox.style.display="flex";
+}
 
 function clearSelection(){
   document.querySelectorAll(".chat-item").forEach(i=>i.classList.remove("active"));
@@ -140,41 +209,6 @@ function showPromemoria(){
   `;
   inputBox.style.display="none";
 }
-
-// INVIO MESSAGGIO CON AI VERA
-sendBtn.onclick = async () => {
-  const text = msg.value.trim();
-  if(!text) return;
-
-  // Mostra messaggio utente
-  chat.innerHTML += `<div class="msg-user"><span>${text}</span></div>`;
-  msg.value="";
-  msg.style.height="48px";
-
-  // Messaggio di attesa
-  ai("Sto elaborando la risposta...");
-
-  try {
-    const res = await fetch("https://company-ai-portal-static.onrender.com/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text })
-    });
-
-    const data = await res.json();
-
-    // Rimuove ultimo "Sto elaborando…"
-    chat.lastElementChild.remove();
-
-    // Risposta AI vera
-    ai(data.reply);
-
-  } catch (err) {
-    chat.lastElementChild.remove();
-    ai("Errore di connessione al server");
-  }
-};
-
 
 // TASTO ENTER
 msg.addEventListener("keydown", e => {
