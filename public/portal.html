@@ -141,14 +141,40 @@ function showPromemoria(){
   inputBox.style.display="none";
 }
 
-// INVIO MESSAGGIO
-sendBtn.onclick = () => {
-  if(!msg.value.trim()) return;
-  chat.innerHTML += `<div class="msg-user"><span>${msg.value}</span></div>`;
+// INVIO MESSAGGIO CON AI VERA
+sendBtn.onclick = async () => {
+  const text = msg.value.trim();
+  if(!text) return;
+
+  // Mostra messaggio utente
+  chat.innerHTML += `<div class="msg-user"><span>${text}</span></div>`;
   msg.value="";
   msg.style.height="48px";
-  setTimeout(()=>ai("Sto elaborando la risposta..."),700);
+
+  // Messaggio di attesa
+  ai("Sto elaborando la risposta...");
+
+  try {
+    const res = await fetch("https://company-ai-portal-static.onrender.com/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text })
+    });
+
+    const data = await res.json();
+
+    // Rimuove ultimo "Sto elaborando…"
+    chat.lastElementChild.remove();
+
+    // Risposta AI vera
+    ai(data.reply);
+
+  } catch (err) {
+    chat.lastElementChild.remove();
+    ai("Errore di connessione al server");
+  }
 };
+
 
 // TASTO ENTER
 msg.addEventListener("keydown", e => {
