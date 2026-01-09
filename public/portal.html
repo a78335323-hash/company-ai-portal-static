@@ -119,31 +119,32 @@ function ai(text){
 let chatHistory = [];
 ai("Come posso aiutarti?");
 
-// INVIO MESSAGGIO CON MEMORIA
+// INVIO MESSAGGIO
 sendBtn.onclick = async () => {
   const text = msg.value.trim();
   if(!text) return;
 
   chat.innerHTML += `<div class="msg-user"><span>${text}</span></div>`;
-  chatHistory.push({ role:"user", content:text });
-  msg.value=""; msg.style.height="48px";
+  chatHistory.push({role:"user", content:text});
+  msg.value="";
+  msg.style.height="48px";
 
   ai("Sto elaborando la risposta...");
 
   try {
-    // --- Inizio simulazione locale ---
-    await new Promise(r => setTimeout(r, 700)); // simula attesa
-    const fakeReply = "Ciao! Hai scritto: " + text;
-    chat.lastElementChild.remove();
-    ai(fakeReply);
-    chatHistory.push({ role:"assistant", content:fakeReply });
-    // --- Fine simulazione ---
+    // Qui va il tuo server AI reale
+    // Temporaneo: simulazione risposta
+    await new Promise(r => setTimeout(r, 500)); // simula attesa
+    const reply = "Ciao! Hai scritto: " + text;
+
+    chat.lastElementChild.remove(); // rimuove "Sto elaborando…"
+    ai(reply);
+    chatHistory.push({role:"assistant", content:reply});
   } catch(err) {
     chat.lastElementChild.remove();
     ai("Errore di connessione al server");
   }
 };
-
 
 // FINE CHAT - SALVATAGGIO
 function endChatPrompt() {
