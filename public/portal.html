@@ -109,15 +109,17 @@ sendBtn.style.background = theme.send;
 logo.src = theme.logo;
 logoLink.href = theme.link;
 
-// AI FUNZIONI
-function ai(text){
-  chat.innerHTML += `<div class="msg-ai"><span>${text}</span></div>`;
-  chat.scrollTop = chat.scrollHeight;
-}
-
 // CRONOLOGIA MESSAGGI
 let chatHistory = [];
 ai("Come posso aiutarti?");
+
+// FUNZIONE AI
+async function getAIReply(message) {
+  // Sostituisci qui con chiamata vera al server AI
+  // Temporaneo: risposta simulata senza "Hai scritto"
+  await new Promise(r => setTimeout(r, 500));
+  return "Ciao! Risposta generica all'input.";
+}
 
 // INVIO MESSAGGIO
 sendBtn.onclick = async () => {
@@ -132,12 +134,8 @@ sendBtn.onclick = async () => {
   ai("Sto elaborando la risposta...");
 
   try {
-    // Qui va il tuo server AI reale
-    // Temporaneo: simulazione risposta
-    await new Promise(r => setTimeout(r, 500)); // simula attesa
-    const reply = "Ciao! Hai scritto: " + text;
-
-    chat.lastElementChild.remove(); // rimuove "Sto elaborando…"
+    const reply = await getAIReply(text);
+    chat.lastElementChild.remove();
     ai(reply);
     chatHistory.push({role:"assistant", content:reply});
   } catch(err) {
