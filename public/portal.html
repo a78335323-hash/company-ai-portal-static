@@ -111,18 +111,18 @@ logoLink.href = theme.link;
 
 // CRONOLOGIA MESSAGGI
 let chatHistory = [];
-ai("Come posso aiutarti?");
 
-// FUNZIONE AI
-async function getAIReply(message) {
-  // Sostituisci qui con chiamata vera al server AI
-  // Temporaneo: risposta simulata senza "Hai scritto"
-  await new Promise(r => setTimeout(r, 500));
-  return "Ciao! Risposta generica all'input.";
+// FUNZIONE PER AGGIUNGERE MESSAGGI
+function ai(text){
+  chat.innerHTML += `<div class="msg-ai"><span>${text}</span></div>`;
+  chat.scrollTop = chat.scrollHeight;
 }
 
-// INVIO MESSAGGIO
-sendBtn.onclick = async () => {
+// INIZIA CHAT
+newChat();
+
+// FUNZIONE INVIO MESSAGGIO
+async function sendMessage() {
   const text = msg.value.trim();
   if(!text) return;
 
@@ -133,18 +133,30 @@ sendBtn.onclick = async () => {
 
   ai("Sto elaborando la risposta...");
 
-  try {
-    const reply = await getAIReply(text);
+  // SIMULAZIONE RISPOSTA AI (sostituire con server AI reale)
+  setTimeout(() => {
     chat.lastElementChild.remove();
+    const reply = "Ciao! Risposta generica all'input.";
     ai(reply);
     chatHistory.push({role:"assistant", content:reply});
-  } catch(err) {
-    chat.lastElementChild.remove();
-    ai("Errore di connessione al server");
-  }
-};
+  }, 500);
+}
 
-// FINE CHAT - SALVATAGGIO
+// INVIO CLICK
+sendBtn.onclick = sendMessage;
+
+// INVIO ENTER
+msg.addEventListener("keydown", e=>{
+  if(e.key==="Enter" && !e.shiftKey){
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+// AUTO-RESIZE TEXTAREA
+msg.addEventListener("input", ()=>{ msg.style.height="48px"; msg.style.height=msg.scrollHeight+"px"; });
+
+// FINE CHAT
 function endChatPrompt() {
   if(chatHistory.length === 0) return;
   const save = confirm("Vuoi salvare questa chat?");
@@ -199,35 +211,6 @@ function showPromemoria(){
   `;
   inputBox.style.display="none";
 }
-
-// TASTO ENTER
-msg.addEventListener("keydown", e => {
-  if(e.key==="Enter" && !e.shiftKey){
-    e.preventDefault();
-    sendBtn.click();
-  }
-});
-
-// AUTO-RIDIMENSIONAMENTO TEXTAREA
-msg.addEventListener("input", ()=>{ msg.style.height="48px"; msg.style.height=msg.scrollHeight+"px"; });
-
-// CERCA CHAT
-search.addEventListener("input", ()=>{
-  const val = search.value.toLowerCase();
-  document.querySelectorAll(".chat-item").forEach(item=>{
-    item.style.display = item.textContent.toLowerCase().includes(val) ? "block" : "none";
-  });
-});
-search.addEventListener("focus", ()=> search.placeholder="");
-search.addEventListener("blur", ()=>{ if(!search.value) search.placeholder="Cerca chat"; });
-
-// SELEZIONE CHAT
-document.querySelectorAll(".chat-item").forEach(item=>{
-  item.onclick = ()=>{
-    clearSelection();
-    item.classList.add("active");
-  };
-});
 
 // MICROFONO
 let recognition;
