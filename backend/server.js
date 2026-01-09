@@ -2,25 +2,27 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 require("dotenv").config();
-
 const OpenAI = require("openai");
+
 const app = express();
 
 app.use(cors());
 app.use(bodyParser.json());
 
+// 🔑 OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
+// 🧠 End-point CHAT AI
 app.post("/chat", async (req, res) => {
-  const { message } = req.body;
-
-  if (!message) {
-    return res.json({ success: false, error: "Nessun messaggio" });
-  }
-
   try {
+    const { message } = req.body;
+
+    if (!message) {
+      return res.json({ success: false, error: "Nessun messaggio" });
+    }
+
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [{ role: "user", content: message }]
@@ -37,6 +39,7 @@ app.post("/chat", async (req, res) => {
   }
 });
 
+// 🚀 avvio server
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log("Server avviato su porta " + port);
