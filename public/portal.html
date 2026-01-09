@@ -131,20 +131,19 @@ sendBtn.onclick = async () => {
   ai("Sto elaborando la risposta...");
 
   try {
-    const res = await fetch("https://company-ai-portal-static.onrender.com/chat", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ messages: chatHistory, user: user })
-    });
-    const data = await res.json();
+    // --- Inizio simulazione locale ---
+    await new Promise(r => setTimeout(r, 700)); // simula attesa
+    const fakeReply = "Ciao! Hai scritto: " + text;
     chat.lastElementChild.remove();
-    ai(data.reply);
-    chatHistory.push({ role:"assistant", content:data.reply });
+    ai(fakeReply);
+    chatHistory.push({ role:"assistant", content:fakeReply });
+    // --- Fine simulazione ---
   } catch(err) {
     chat.lastElementChild.remove();
     ai("Errore di connessione al server");
   }
 };
+
 
 // FINE CHAT - SALVATAGGIO
 function endChatPrompt() {
