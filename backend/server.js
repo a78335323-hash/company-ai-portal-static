@@ -1,73 +1,43 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const nodemailer = require('nodemailer');
-const crypto = require('crypto');
-const cors = require('cors');
-const path = require('path');
+const express = require("express");
+const cors = require("cors");
+const bodyParser = require("body-parser");
+require("dotenv").config();
 
+const OpenAI = require("openai");
 const app = express();
-app.use(express.static(path.join(__dirname, '../public')));
+
 app.use(cors());
 app.use(bodyParser.json());
 
-// simulazione database utenti
-let users = {
-  "a78335323@gmail.com": { password: "vecchiaPassword" }
-};
-
-let resetTokens = {};
-
-// EMAIL CONFIG
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: 'a78335323@gmail.com',
-    pass: 'nobi gkzm dgsy scns' // PASSWORD APP
-  }
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
 });
 
-// TEST EMAIL ALL'AVVIO (IMPORTANTISSIMO)
-transporter.verify((err, success) => {
-  if (err) {
-    console.error("❌ ERRORE SMTP:", err);
-  } else {
-    console.log("✅ SMTP Gmail collegato correttamente");
-  }
-});
+app.post("/chat", async (req, res) => {
+  const { message } = req.body;
 
-// 🔐 FORGOT PASSWORD
-app.post('/forgot-password', (req, res) => {
-  const { email } = req.body;
-
-  if (!users[email]) {
-    return res.json({ success: false, message: "Email non trovata" });
+  if (!message) {
+    return res.json({ success: false, error: "Nessun messaggio" });
   }
 
-  const token = crypto.randomBytes(20).toString('hex');
-  resetTokens[token] = email;
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: message }]
+    });
 
-  const link = `https://company-ai-portal-static.vercel.app/reset-password.html?token=${token}`;
+    res.json({
+      success: true,
+      reply: completion.choices[0].message.content
+    });
 
-  console.log("==============================");
-  console.log("RICHIESTA RESET PASSWORD");
-  console.log("Email:", email);
-  console.log("Link:", link);
-  console.log("==============================");
-
-  transporter.sendMail({
-    from: 'AI Portal <a78335323@gmail.com>',
-    to: email,
-    subject: 'Reset Password',
-    text: `Clicca qui per reimpostare la password:\n\n${link}`
-  }).then(() => {
-    res.json({ success: true, message: "Link inviato via mail!" });
-  }).catch(err => {
+  } catch (err) {
     console.error(err);
     res.json({ success: false, error: err.message });
-  });
+  }
 });
 
-
-app.listen(3000, () => {
-  console.log("🚀 Backend attivo su porta 3000");
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log("Server avviato su porta " + port);
 });
