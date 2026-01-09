@@ -1,206 +1,217 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>Portal AI</title>
+<title>Area personale AI</title>
+
 <style>
-body { margin:0; font-family:Arial; display:flex; height:100vh; }
-/* SIDEBAR */
-.sidebar { width:270px; padding:14px; color:white; display:flex; flex-direction:column; justify-content:space-between; }
-/* PULSANTI UNIFICATI */
-.sidebar-btn { width:100%; padding:12px; margin-bottom:10px; border-radius:10px; font-size:14px; cursor:pointer; text-align:center; background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.45); box-sizing:border-box; }
-.sidebar-btn:hover { background: rgba(255,255,255,0.28); }
-/* CERCA CHAT */
-.search-wrapper { position:relative; width:100%; display:flex; align-items:center; justify-content:center; }
-.search-wrapper input { width:100%; background:transparent; border:none; outline:none; color:white; padding:12px; text-align:center; font-size:14px; }
-/* CHAT LIST */
-.chat-title { font-size:13px; opacity:0.85; margin:14px 0 6px; }
-.chat-item { padding:8px; border-radius:8px; cursor:pointer; font-size:14px; }
-.chat-item:hover { background: rgba(255,255,255,0.18); }
-.chat-item.active { background: rgba(255,255,255,0.35); }
-/* PROFILO */
-.profile-box { padding:10px; border-radius:10px; background:rgba(255,255,255,0.18); display:flex; align-items:center; }
-.avatar { width:34px; height:34px; border-radius:50%; background:white; color:#333; font-weight:bold; display:flex; align-items:center; justify-content:center; margin-right:8px; }
-.profile-name { flex:1; font-size:13px; }
-.change { background:white; color:#333; border:none; font-size:11px; padding:4px 8px; border-radius:6px; cursor:pointer; }
-/* MAIN */
-.main { flex:1; padding:30px; position:relative; display:flex; justify-content:center; }
-.container { width:88%; display:flex; flex-direction:column; }
-/* LOGO */
-#logoLink { position:absolute; top:5px; right:10px; }
-#logo { width:90px; cursor:pointer; }
+body{
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#f4f6f8;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+
+header{
+  background:#2ecc71;
+  padding:14px 20px;
+  color:white;
+  font-size:18px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+#userInfo{
+  font-weight:bold;
+}
+
+#logout{
+  background:#e74c3c;
+  border:none;
+  padding:8px 12px;
+  border-radius:8px;
+  color:white;
+  cursor:pointer;
+}
+
+main{
+  flex:1;
+  display:flex;
+  padding:10px;
+  gap:10px;
+}
+
+#left{
+  width:25%;
+  background:white;
+  border-radius:12px;
+  padding:12px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.1);
+}
+
+#right{
+  flex:1;
+  background:white;
+  border-radius:12px;
+  padding:12px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.1);
+  display:flex;
+  flex-direction:column;
+}
+
 /* CHAT */
-.chat { flex:1; background:white; border-radius:16px; padding:22px; overflow-y:auto; box-shadow:0 6px 18px rgba(0,0,0,0.18); }
-.msg-user, .msg-ai { margin:12px 0; display:flex; }
-.msg-user { justify-content:flex-end; }
-.msg-ai { justify-content:flex-start; }
-.msg-user span, .msg-ai span { padding:12px 16px; border-radius:16px; max-width:75%; white-space:pre-wrap; word-wrap:break-word; font-size:15px; }
-.msg-user span { background:#dcf8c6; }
-.msg-ai span { background:#f1f1f1; }
-/* INPUT */
-.input { margin-top:12px; display:flex; align-items:center; }
-textarea { flex:1; resize:none; padding:14px; border-radius:12px; border:1px solid #ccc; min-height:48px; max-height:160px; font-size:15px; }
-.send { margin-left:10px; padding:0 22px; border-radius:12px; border:none; color:white; cursor:pointer; font-size:15px; }
-/* MICROFONO */
-.mic-btn { margin-right:10px; padding:0; width:44px; height:44px; border-radius:50%; border:none; background:#4285f4; color:white; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+#chat{
+  flex:1;
+  overflow-y:auto;
+  padding:10px;
+  border:1px solid #ddd;
+  border-radius:10px;
+  margin-bottom:10px;
+}
+
+.msg-user{
+  text-align:right;
+  margin:6px 0;
+}
+
+.msg-user span{
+  display:inline-block;
+  background:#2ecc71;
+  color:white;
+  padding:8px 10px;
+  border-radius:10px;
+}
+
+.msg-ai{
+  text-align:left;
+  margin:6px 0;
+}
+
+.msg-ai span{
+  display:inline-block;
+  background:#ecf0f1;
+  padding:8px 10px;
+  border-radius:10px;
+}
+
+#msg{
+  width:100%;
+  resize:none;
+  height:48px;
+  padding:10px;
+  border-radius:10px;
+  border:1px solid #ccc;
+}
+
+#sendBtn{
+  margin-top:8px;
+  width:160px;
+  padding:10px;
+  border:none;
+  border-radius:10px;
+  background:#3498db;
+  color:white;
+  cursor:pointer;
+}
 </style>
 </head>
+
 <body>
-<div class="sidebar" id="sidebar">
-  <div>
-    <div class="sidebar-btn" onclick="newChat()">Nuova chat</div>
-    <div class="sidebar-btn search-wrapper"><input id="search" placeholder="Cerca chat"></div>
-    <div class="sidebar-btn" onclick="showPromemoria()">Promemoria</div>
-    <div class="chat-title">Le tue chat</div>
-    <div id="chatList">
-      <div class="chat-item">Preventivo Bobman</div>
-      <div class="chat-item">Fattura Rossi</div>
-      <div class="chat-item">Listino 2025</div>
-    </div>
-  </div>
-  <div class="profile-box">
-    <div class="avatar" id="avatar"></div>
-    <div class="profile-name" id="profileName"></div>
-    <button class="change" onclick="location.href='index.html'">cambia</button>
-  </div>
+
+<header>
+  <div>💼 Portale AI aziendale</div>
+  <div id="userInfo"></div>
+  <button id="logout">Logout</button>
+</header>
+
+<main>
+
+<div id="left">
+  <h3>Dati utente</h3>
+  <p>Azienda: <b id="companyName"></b></p>
+  <p>Operatore: <b id="userName"></b></p>
 </div>
 
-<div class="main">
-  <a id="logoLink" target="_blank"><img id="logo"></a>
-  <div class="container">
-    <div class="chat" id="chat"></div>
-    <div class="input" id="inputBox">
-      <button class="mic-btn" id="mic">🎤</button>
-      <textarea id="msg" placeholder="Scrivi un messaggio..."></textarea>
-      <button class="send" id="send">Invia</button>
-    </div>
-  </div>
+<div id="right">
+  <h3>Chat AI</h3>
+
+  <div id="chat"></div>
+
+  <textarea id="msg" placeholder="Scrivi il messaggio..."></textarea>
+  <button id="sendBtn">Invia</button>
 </div>
+
+</main>
 
 <script>
-const user = localStorage.getItem("user") || "Utente";
-const company = localStorage.getItem("company") || "Lucagri";
+// recupero dati salvati dal login
+const company = localStorage.getItem("company") || "Sconosciuta";
+const user = localStorage.getItem("user") || "Operatore";
 
-const avatar = document.getElementById("avatar");
-const profileName = document.getElementById("profileName");
-const sidebar = document.getElementById("sidebar");
-const sendBtn = document.getElementById("send");
-const logo = document.getElementById("logo");
-const logoLink = document.getElementById("logoLink");
-const chat = document.getElementById("chat");
-const msg = document.getElementById("msg");
-const search = document.getElementById("search");
-const inputBox = document.getElementById("inputBox");
-const micBtn = document.getElementById("mic");
+document.getElementById("companyName").textContent = company;
+document.getElementById("userName").textContent = user;
+document.getElementById("userInfo").textContent = company + " | " + user;
 
-// AVATAR E NOME
-avatar.textContent = user.slice(0,2).toUpperCase();
-profileName.textContent = user;
-
-// TEMI AZIENDA
-const companyData = {
-  Lucagri: {sidebar: "linear-gradient(180deg,#7de3a2,#2ecc71)", send:"#2ecc71", logo:"logo.png", link:"https://www.lucagri.it/"},
-  Agrichampion: {sidebar:"linear-gradient(180deg,#ffdba8,#f39c12)", send:"#f39c12", logo:"logo2.png", link:"https://agrichampion.com/"},
-  Cabreganze: {sidebar:"linear-gradient(180deg,#f6e6a8,#d4af37)", send:"#d4af37", logo:"logo3.jpg", link:"https://www.cabreganze.com/"}
+// logout
+document.getElementById("logout").onclick = ()=>{
+  localStorage.clear();
+  location.href="index.html";
 };
 
-const theme = companyData[company] || companyData.Lucagri;
-sidebar.style.background = theme.sidebar;
-sendBtn.style.background = theme.send;
-logo.src = theme.logo;
-logoLink.href = theme.link;
+const msg = document.getElementById("msg");
+const sendBtn = document.getElementById("sendBtn");
+const chat = document.getElementById("chat");
 
-// AI FUNZIONI
+// mostra messaggio AI
 function ai(text){
   chat.innerHTML += `<div class="msg-ai"><span>${text}</span></div>`;
   chat.scrollTop = chat.scrollHeight;
 }
-ai("Come posso aiutarti?");
 
-function clearSelection(){
-  document.querySelectorAll(".chat-item").forEach(i=>i.classList.remove("active"));
-}
+// invio messaggio
+sendBtn.onclick = async () => {
 
-function newChat(){
-  clearSelection();
-  chat.innerHTML="";
-  inputBox.style.display="flex";
-  ai("Come posso aiutarti?");
-}
-
-function showPromemoria(){
-  clearSelection();
-  chat.innerHTML=`
-    <div style="font-size:17px; line-height:1.7">
-      <h3>Promemoria</h3>
-      <p>Chiamare cliente</p>
-      <p>Inviare fattura</p>
-      <p>Controllare ordini</p>
-    </div>
-  `;
-  inputBox.style.display="none";
-}
-
-// INVIO MESSAGGIO
-sendBtn.onclick = () => {
   if(!msg.value.trim()) return;
+
+  // mostra messaggio utente
   chat.innerHTML += `<div class="msg-user"><span>${msg.value}</span></div>`;
+  chat.scrollTop = chat.scrollHeight;
+
+  const text = msg.value;
   msg.value="";
-  msg.style.height="48px";
-  setTimeout(()=>ai("Sto elaborando la risposta..."),700);
+
+  ai("Sto elaborando la risposta...");
+
+  try{
+    const res = await fetch("https://company-ai-portal-static.onrender.com/chat", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify({ message:text })
+    });
+
+    const data = await res.json();
+
+    chat.lastChild.remove(); // rimuovi "sto elaborando"
+
+    ai(data.reply || "Nessuna risposta ricevuta");
+
+  }catch(err){
+    chat.lastChild.remove();
+    ai("Errore di comunicazione con il server");
+  }
 };
 
-// TASTO ENTER
-msg.addEventListener("keydown", e => {
+// invio con ENTER
+msg.addEventListener("keydown", e=>{
   if(e.key==="Enter" && !e.shiftKey){
     e.preventDefault();
     sendBtn.click();
   }
 });
-
-// AUTO-RIDIMENSIONAMENTO TEXTAREA
-msg.addEventListener("input", ()=>{ msg.style.height="48px"; msg.style.height=msg.scrollHeight+"px"; });
-
-// CERCA CHAT
-search.addEventListener("input", ()=>{
-  const val = search.value.toLowerCase();
-  document.querySelectorAll(".chat-item").forEach(item=>{
-    item.style.display = item.textContent.toLowerCase().includes(val) ? "block" : "none";
-  });
-});
-search.addEventListener("focus", ()=> search.placeholder="");
-search.addEventListener("blur", ()=>{ if(!search.value) search.placeholder="Cerca chat"; });
-
-// SELEZIONE CHAT
-document.querySelectorAll(".chat-item").forEach(item=>{
-  item.onclick = ()=>{
-    clearSelection();
-    item.classList.add("active");
-  };
-});
-
-// MICROFONO
-let recognition;
-if('webkitSpeechRecognition' in window){
-  recognition = new webkitSpeechRecognition();
-  recognition.lang='it-IT';
-  recognition.continuous=false;
-  recognition.interimResults=false;
-  micBtn.addEventListener('click', ()=>{
-    recognition.start();
-  });
-  recognition.onresult=(event)=>{
-    msg.value+=event.results[0][0].transcript;
-    msg.focus();
-  };
-  recognition.onerror=(event)=>{
-    console.error(event.error);
-    alert("Errore microfono: "+event.error);
-  };
-} else {
-  micBtn.disabled=true;
-  micBtn.title="Il tuo browser non supporta la trascrizione vocale";
-}
 </script>
+
 </body>
 </html>
