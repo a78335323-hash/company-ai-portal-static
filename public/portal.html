@@ -48,9 +48,13 @@ textarea { flex:1; resize:none; padding:14px; border-radius:12px; border:1px sol
 <body>
 <div class="sidebar" id="sidebar">
   <div>
-    <div class="sidebar-btn" onclick="endChatPrompt(); newChat()">Nuova chat</div>
+    <div class="sidebar-btn" onclick="newChat()">Nuova chat</div>
     <div class="sidebar-btn search-wrapper"><input id="search" placeholder="Cerca chat"></div>
     <div class="sidebar-btn" onclick="showPromemoria()">Promemoria</div>
+
+    <!-- 🔔 NUOVO PULSANTE TELEFONATE -->
+    <div class="sidebar-btn" onclick="showTelefonate()">Telefonate</div>
+
     <div class="chat-title">Le tue chat</div>
     <div id="chatList">
       <div class="chat-item">Preventivo Bobman</div>
@@ -58,6 +62,7 @@ textarea { flex:1; resize:none; padding:14px; border-radius:12px; border:1px sol
       <div class="chat-item">Listino 2025</div>
     </div>
   </div>
+
   <div class="profile-box">
     <div class="avatar" id="avatar"></div>
     <div class="profile-name" id="profileName"></div>
@@ -103,90 +108,19 @@ const companyData = {
   Agrichampion: {sidebar:"linear-gradient(180deg,#ffdba8,#f39c12)", send:"#f39c12", logo:"logo2.png", link:"https://agrichampion.com/"},
   Cabreganze: {sidebar:"linear-gradient(180deg,#f6e6a8,#d4af37)", send:"#d4af37", logo:"logo3.jpg", link:"https://www.cabreganze.com/"}
 };
+
 const theme = companyData[company] || companyData.Lucagri;
 sidebar.style.background = theme.sidebar;
 sendBtn.style.background = theme.send;
 logo.src = theme.logo;
 logoLink.href = theme.link;
 
-// CRONOLOGIA MESSAGGI
-let chatHistory = [];
-
-// FUNZIONE PER AGGIUNGERE MESSAGGI
+// AI FUNZIONI
 function ai(text){
   chat.innerHTML += `<div class="msg-ai"><span>${text}</span></div>`;
   chat.scrollTop = chat.scrollHeight;
 }
-
-// INIZIA CHAT
-newChat();
-
-// FUNZIONE INVIO MESSAGGIO
-async function sendMessage() {
-  const text = msg.value.trim();
-  if(!text) return;
-
-  chat.innerHTML += `<div class="msg-user"><span>${text}</span></div>`;
-  chatHistory.push({role:"user", content:text});
-  msg.value="";
-  msg.style.height="48px";
-
-  ai("Sto elaborando la risposta...");
-
-  // SIMULAZIONE RISPOSTA AI (sostituire con server AI reale)
-  setTimeout(() => {
-    chat.lastElementChild.remove();
-    const reply = "Ciao! Risposta generica all'input.";
-    ai(reply);
-    chatHistory.push({role:"assistant", content:reply});
-  }, 500);
-}
-
-// INVIO CLICK
-sendBtn.onclick = sendMessage;
-
-// INVIO ENTER
-msg.addEventListener("keydown", e=>{
-  if(e.key==="Enter" && !e.shiftKey){
-    e.preventDefault();
-    sendMessage();
-  }
-});
-
-// AUTO-RESIZE TEXTAREA
-msg.addEventListener("input", ()=>{ msg.style.height="48px"; msg.style.height=msg.scrollHeight+"px"; });
-
-// FINE CHAT
-function endChatPrompt() {
-  if(chatHistory.length === 0) return;
-  const save = confirm("Vuoi salvare questa chat?");
-  if(save){
-    const name = prompt("Inserisci un nome per la chat:");
-    if(name){
-      localStorage.setItem(`chat_${user}_${name}`, JSON.stringify(chatHistory));
-      const chatItem = document.createElement("div");
-      chatItem.className="chat-item";
-      chatItem.textContent=name;
-      chatItem.onclick = ()=> loadChat(name);
-      document.getElementById("chatList").appendChild(chatItem);
-    }
-  }
-  chat.innerHTML="";
-  chatHistory=[];
-}
-
-// CARICA CHAT SALVATA
-function loadChat(name){
-  const saved = localStorage.getItem(`chat_${user}_${name}`);
-  if(!saved) return;
-  chat.innerHTML="";
-  chatHistory = JSON.parse(saved);
-  chatHistory.forEach(m=>{
-    if(m.role==="user") chat.innerHTML += `<div class="msg-user"><span>${m.content}</span></div>`;
-    else chat.innerHTML += `<div class="msg-ai"><span>${m.content}</span></div>`;
-  });
-  inputBox.style.display="flex";
-}
+ai("Come posso aiutarti?");
 
 function clearSelection(){
   document.querySelectorAll(".chat-item").forEach(i=>i.classList.remove("active"));
@@ -207,10 +141,76 @@ function showPromemoria(){
       <p>Chiamare cliente</p>
       <p>Inviare fattura</p>
       <p>Controllare ordini</p>
+
+      <!-- 🔔 COLLEGAMENTO CON TELEFONATE FUTURO -->
+      <p>📞 Richiamare interessati</p>
+      <p>📧 Reinviare email</p>
     </div>
   `;
   inputBox.style.display="none";
 }
+
+<!-- 🚀 NUOVA SEZIONE TELEFONATE -->
+function showTelefonate(){
+  clearSelection();
+  chat.innerHTML = `
+    <div style="font-size:17px; line-height:1.7">
+      <h3>Telefonate</h3>
+
+      <h4>✔️ Interessati</h4>
+      <table border="1" cellpadding="6" style="border-collapse:collapse; width:100%;">
+        <tr><th>Nome</th><th>Numero</th><th>Data chiamata</th></tr>
+        <tr><td>Mario Rossi</td><td>3331234567</td><td>05/01/2026</td></tr>
+        <tr><td>Lucia Bianchi</td><td>3499876543</td><td>07/01/2026</td></tr>
+      </table>
+
+      <br>
+
+      <h4>📧 Da reinviare email</h4>
+      <table border="1" cellpadding="6" style="border-collapse:collapse; width:100%;">
+        <tr><th>Nome</th><th>Email</th><th>Data chiamata</th></tr>
+        <tr><td>Paolo Verdi</td><td>paolo@example.com</td><td>06/01/2026</td></tr>
+        <tr><td>Anna Blu</td><td>anna@example.com</td><td>08/01/2026</td></tr>
+      </table>
+    </div>
+  `;
+  inputBox.style.display="none";
+}
+
+// INVIO MESSAGGIO
+sendBtn.onclick = () => {
+  if(!msg.value.trim()) return;
+  chat.innerHTML += `<div class="msg-user"><span>${msg.value}</span></div>`;
+  msg.value="";
+  msg.style.height="48px";
+  setTimeout(()=>ai("Sto elaborando la risposta..."),700);
+};
+
+// ENTER
+msg.addEventListener("keydown", e => {
+  if(e.key==="Enter" && !e.shiftKey){
+    e.preventDefault();
+    sendBtn.click();
+  }
+});
+
+// AUTO-RIDIMENSIONAMENTO
+msg.addEventListener("input", ()=>{ msg.style.height="48px"; msg.style.height=msg.scrollHeight+"px"; });
+
+// CERCA CHAT
+search.addEventListener("input", ()=>{
+  const val = search.value.toLowerCase();
+  document.querySelectorAll(".chat-item").forEach(item=>{
+    item.style.display = item.textContent.toLowerCase().includes(val) ? "block" : "none";
+  });
+});
+
+document.querySelectorAll(".chat-item").forEach(item=>{
+  item.onclick = ()=>{
+    clearSelection();
+    item.classList.add("active");
+  };
+});
 
 // MICROFONO
 let recognition;
@@ -219,17 +219,8 @@ if('webkitSpeechRecognition' in window){
   recognition.lang='it-IT';
   recognition.continuous=false;
   recognition.interimResults=false;
-  micBtn.addEventListener('click', ()=>{
-    recognition.start();
-  });
-  recognition.onresult=(event)=>{
-    msg.value+=event.results[0][0].transcript;
-    msg.focus();
-  };
-  recognition.onerror=(event)=>{
-    console.error(event.error);
-    alert("Errore microfono: "+event.error);
-  };
+  micBtn.addEventListener('click', ()=> recognition.start());
+  recognition.onresult=(event)=>{ msg.value+=event.results[0][0].transcript; msg.focus(); };
 } else {
   micBtn.disabled=true;
   micBtn.title="Il tuo browser non supporta la trascrizione vocale";
