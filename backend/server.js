@@ -14,28 +14,45 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-// 🧠 End-point CHAT AI
+// 💾 memoria chat temporanea per utente (molto semplice)
+let conversations = {};
+
+// 🧠 Endpoint CHAT AI
 app.post("/chat", async (req, res) => {
   try {
-    const { message } = req.body;
+    const { userId, message } = req.body;
 
     if (!message) {
       return res.json({ success: false, error: "Nessun messaggio" });
     }
 
+    // se non esiste la conversazione, creala
+    if (!conversations[userId]) {
+      conversations[userId] = [];
+    }
+
+    // aggiungi messaggio utente alla memoria
+    conversations[userId].push({ role: "user", content: message });
+
+    // chiama openai includendo memoria conversazione
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      messages: [{ role: "user", content: message }]
+      messages: conversations[userId]
     });
 
-    res.json({
+    const reply = completion.choices[0].message.content;
+
+    // salva risposta AI in memoria
+    conversations[userId].push({ role: "assistant", content: reply });
+
+    return res.json({
       success: true,
-      reply: completion.choices[0].message.content
+      reply
     });
 
   } catch (err) {
     console.error(err);
-    res.json({ success: false, error: err.message });
+    return res.json({ success: false, error: err.message });
   }
 });
 
