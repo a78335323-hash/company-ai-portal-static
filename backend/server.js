@@ -14,9 +14,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-// 💾 memoria chat temporanea per utente (molto semplice)
-let conversations = {};
-
+// 🧠 ENDPOINT CHAT CON MEMORIA
 app.post("/chat", async (req, res) => {
   try {
 
@@ -42,8 +40,7 @@ app.post("/chat", async (req, res) => {
   }
 });
 
-
-// 🚀 avvio server
+// 🚀 SERVER
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log("Server avviato su porta " + port);
