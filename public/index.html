@@ -56,6 +56,29 @@ button {
     cursor: pointer;
     margin-bottom: 20px;
 }
+
+.rememberBox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 18px;
+    font-size: 13px;
+}
+
+/* contenitore password con pulsante mostra/nascondi */
+.password-wrapper {
+    position: relative;
+}
+
+.togglePassword {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #555;
+    user-select: none;
+}
 </style>
 </head>
 
@@ -70,26 +93,28 @@ button {
     <select id="company">
         <option value="Lucagri">Lucagri</option>
         <option value="Agrichampion">Agrichampion</option>
-        <option value="Cabreganze">Cabreganze</option>
     </select>
 
-    <!-- NOMI -->
-    <select id="user">
-        <option value="">Seleziona nome</option>
-        <option value="Luca">Luca</option>
-        <option value="Mattia">Mattia</option>
-        <option value="Claudia">Claudia</option>
-        <option value="Paolo">Paolo</option>
-        <option value="Matteo">Matteo</option>
-    </select>
+    <!-- EMAIL -->
+    <input type="email" id="email" placeholder="Il tuo indirizzo email">
 
-    <input type="password" id="password" placeholder="Password">
+    <!-- PASSWORD CON MOSTRA/NASCONDI -->
+    <div class="password-wrapper">
+        <input type="password" id="password" placeholder="La tua password">
+        <span class="togglePassword" id="togglePassword">Mostra</span>
+    </div>
+
+    <!-- MEMORIZZA -->
+    <div class="rememberBox">
+        <input type="checkbox" id="remember">
+        <label for="remember">Memorizza dati di accesso</label>
+    </div>
 
     <div class="forgot" onclick="location.href='forgot.html'">
         Hai dimenticato la password?
     </div>
 
-    <button id="login">Login</button>
+    <button id="login">Accedi</button>
 </div>
 
 <script>
@@ -108,40 +133,77 @@ function applyTheme(company) {
         btn.style.background = "#f39c12";
         logo.src = "logo2.png";
     }
-    else if (company === "Cabreganze") {
-        body.style.background = "#fffbe0";
-        btn.style.background = "#d4af37";
-        logo.src = "logo3.jpg";
-    }
 }
 
 window.addEventListener("DOMContentLoaded", () => {
     const companySelect = document.getElementById("company");
-    const userSelect = document.getElementById("user");
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+    const remember = document.getElementById("remember");
     const loginBtn = document.getElementById("login");
+    const togglePassword = document.getElementById("togglePassword");
 
     // ripristino azienda
     const savedCompany = localStorage.getItem("company") || "Lucagri";
     companySelect.value = savedCompany;
     applyTheme(savedCompany);
 
+    // ripristino credenziali se salvate
+    if (localStorage.getItem("remember") === "true") {
+        remember.checked = true;
+        emailInput.value = localStorage.getItem("savedEmail") || "";
+        passwordInput.value = localStorage.getItem("savedPassword") || "";
+    }
+
+    // cambio tema al cambio azienda
     companySelect.addEventListener("change", () => {
         localStorage.setItem("company", companySelect.value);
         applyTheme(companySelect.value);
     });
-loginBtn.addEventListener("click", () => {
-    if (!userSelect.value) {
-        alert("Seleziona un nome");
-        return;
-    }
 
-    // 🔥 SALVA SEMPRE L'AZIENDA AL LOGIN
-    localStorage.setItem("company", companySelect.value);
+    // mostra / nascondi password
+    togglePassword.addEventListener("click", () => {
+        if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            togglePassword.textContent = "Nascondi";
+        } else {
+            passwordInput.type = "password";
+            togglePassword.textContent = "Mostra";
+        }
+    });
 
-    localStorage.setItem("user", userSelect.value);
-    location.href = "portal.html";
-});
+    // login
+    loginBtn.addEventListener("click", () => {
 
+        if (!emailInput.value) {
+            alert("Inserisci l'email");
+            return;
+        }
+
+        if (!passwordInput.value) {
+            alert("Inserisci la password");
+            return;
+        }
+
+        // salva azienda sempre
+        localStorage.setItem("company", companySelect.value);
+
+        // memorizza credenziali solo se spuntato
+        if (remember.checked) {
+            localStorage.setItem("remember", "true");
+            localStorage.setItem("savedEmail", emailInput.value);
+            localStorage.setItem("savedPassword", passwordInput.value);
+        } else {
+            localStorage.removeItem("remember");
+            localStorage.removeItem("savedEmail");
+            localStorage.removeItem("savedPassword");
+        }
+
+        // usa email come identificativo utente
+        localStorage.setItem("user", emailInput.value);
+
+        location.href = "portal.html";
+    });
 });
 </script>
 
