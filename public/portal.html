@@ -124,7 +124,7 @@ const search = document.getElementById("search");
 const inputBox = document.getElementById("inputBox");
 const micBtn = document.getElementById("mic");
 
-/* 🔥 MEMORIA CHAT */
+/* 🔥 MEMORIA CHAT IN PAGINA */
 let chatHistory = [];
 
 /* AVATAR */
@@ -133,9 +133,9 @@ profileName.textContent = user;
 
 /* TEMI AZIENDA */
 const companyData = {
- Lucagri:{sidebar:"linear-gradient(180deg,#7de3a2,#2ecc71)",send:"#2ecc71",logo:"logo.png",link:"https://www.lucagri.it/"},
- Agrichampion:{sidebar:"linear-gradient(180deg,#ffdba8,#f39c12)",send:"#f39c12",logo:"logo2.png",link:"https://agrichampion.com/"},
- Cabreganze:{sidebar:"linear-gradient(180deg,#f6e6a8,#d4af37)",send:"#d4af37",logo:"logo3.jpg",link:"https://www.cabreganze.com/"}
+  Lucagri:{sidebar:"linear-gradient(180deg,#7de3a2,#2ecc71)",send:"#2ecc71",logo:"logo.png",link:"https://www.lucagri.it/"},
+  Agrichampion:{sidebar:"linear-gradient(180deg,#ffdba8,#f39c12)",send:"#f39c12",logo:"logo2.png",link:"https://agrichampion.com/"},
+  Cabreganze:{sidebar:"linear-gradient(180deg,#f6e6a8,#d4af37)",send:"#d4af37",logo:"logo3.jpg",link:"https://www.cabreganze.com/"}
 };
 
 const theme = companyData[company] || companyData.Lucagri;
@@ -149,13 +149,13 @@ logoLink.href = theme.link;
 =================================*/
 
 function ai(text){
- chat.innerHTML += `<div class="msg-ai"><span>${text}</span></div>`;
- chat.scrollTop = chat.scrollHeight;
+  chat.innerHTML += `<div class="msg-ai"><span>${text}</span></div>`;
+  chat.scrollTop = chat.scrollHeight;
 }
 
 function userMsg(text){
- chat.innerHTML += `<div class="msg-user"><span>${text}</span></div>`;
- chat.scrollTop = chat.scrollHeight;
+  chat.innerHTML += `<div class="msg-user"><span>${text}</span></div>`;
+  chat.scrollTop = chat.scrollHeight;
 }
 
 /* primo messaggio */
@@ -163,9 +163,9 @@ ai("Come posso aiutarti?");
 
 /* nuova chat */
 function newChat(){
- chat.innerHTML = "";
- chatHistory = [];
- ai("Come posso aiutarti?");
+  chat.innerHTML = "";
+  chatHistory = [];
+  ai("Come posso aiutarti?");
 }
 
 /* ===============================
@@ -173,92 +173,109 @@ function newChat(){
 =================================*/
 
 function showPromemoria(){
- chat.innerHTML = `
- <div style="font-size:17px; line-height:1.7">
-   <h3>Promemoria</h3>
-   <p>Chiamare cliente</p>
-   <p>Inviare fattura</p>
-   <p>Controllare ordini</p>
-   <p>📞 Richiamare interessati</p>
-   <p>📧 Reinviare email</p>
- </div>`;
- inputBox.style.display="none";
+  chat.innerHTML = `
+  <div style="font-size:17px; line-height:1.7">
+    <h3>Promemoria</h3>
+    <p>Chiamare cliente</p>
+    <p>Inviare fattura</p>
+    <p>Controllare ordini</p>
+    <p>📞 Richiamare interessati</p>
+    <p>📧 Reinviare email</p>
+  </div>`;
+  inputBox.style.display="none";
 }
 
 function showTelefonate(){
- chat.innerHTML = `
- <div style="font-size:17px; line-height:1.7">
- <h3>Telefonate</h3>
-
- <h4>✔️ Interessati</h4>
- <table border="1" cellpadding="6" style="border-collapse:collapse; width:100%;">
- <tr><th>Nome</th><th>Numero</th><th>Data chiamata</th></tr>
- <tr><td>Mario Rossi</td><td>3331234567</td><td>05/01/2026</td></tr>
- <tr><td>Lucia Bianchi</td><td>3499876543</td><td>07/01/2026</td></tr>
- </table>
-
- <br>
-
- <h4>📧 Da reinviare email</h4>
- <table border="1" cellpadding="6" style="border-collapse:collapse; width:100%;">
- <tr><th>Nome</th><th>Email</th><th>Data chiamata</th></tr>
- <tr><td>Paolo Verdi</td><td>paolo@example.com</td><td>06/01/2026</td></tr>
- <tr><td>Anna Blu</td><td>anna@example.com</td><td>08/01/2026</td></tr>
- </table>
- </div>`;
- inputBox.style.display="none";
+  chat.innerHTML = `
+  <div style="font-size:17px; line-height:1.7">
+    <h3>Telefonate</h3>
+    <h4>✔️ Interessati</h4>
+    <table border="1" cellpadding="6" style="border-collapse:collapse; width:100%;">
+      <tr><th>Nome</th><th>Numero</th><th>Data chiamata</th></tr>
+      <tr><td>Mario Rossi</td><td>3331234567</td><td>05/01/2026</td></tr>
+      <tr><td>Lucia Bianchi</td><td>3499876543</td><td>07/01/2026</td></tr>
+    </table>
+    <br>
+    <h4>📧 Da reinviare email</h4>
+    <table border="1" cellpadding="6" style="border-collapse:collapse; width:100%;">
+      <tr><th>Nome</th><th>Email</th><th>Data chiamata</th></tr>
+      <tr><td>Paolo Verdi</td><td>paolo@example.com</td><td>06/01/2026</td></tr>
+      <tr><td>Anna Blu</td><td>anna@example.com</td><td>08/01/2026</td></tr>
+    </table>
+  </div>`;
+  inputBox.style.display="none";
 }
 
 /* ===============================
-   INVIO MESSAGGIO + MEMORIA CORRETTA
+   INVIO MESSAGGIO + MEMORIA + RATE LIMIT
 =================================*/
 
 sendBtn.onclick = async () => {
+  if(!msg.value.trim()) return;
 
- if(!msg.value.trim()) return;
+  const text = msg.value;
+  msg.value = "";
+  userMsg(text);
 
- const text = msg.value;
- msg.value = "";
- userMsg(text);
+  const loadId = Date.now();
+  chat.innerHTML += `<div class="msg-ai" id="ai_${loadId}"><span>Sto elaborando la risposta...</span></div>`;
 
- const loadId = Date.now();
- chat.innerHTML += `<div class="msg-ai" id="ai_${loadId}"><span>Sto elaborando la risposta...</span></div>`;
+  chatHistory.push({role:"user", content:text});
 
- /* ✅ Aggiorna memoria prima di inviare */
- chatHistory.push({role:"user", content:text});
+  const maxRetries = 5;
+  let attempt = 0;
 
- try{
-   const res = await fetch("https://company-ai-portal-static.onrender.com/chat",{
-     method:"POST",
-     headers:{"Content-Type":"application/json"},
-     body:JSON.stringify({history: chatHistory}) // invia array history corretto
-   });
+  async function trySend() {
+    attempt++;
+    try {
+      const res = await fetch("https://company-ai-portal-static.onrender.com/chat",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({history: chatHistory})
+      });
 
-   const data = await res.json();
-   const box = document.getElementById(`ai_${loadId}`);
+      const data = await res.json();
+      const box = document.getElementById(`ai_${loadId}`);
 
-   if(data.success){
-     box.innerHTML = `<span>${data.reply}</span>`;
-     chatHistory.push({role:"assistant", content:data.reply});
-   } else {
-     box.innerHTML = `<span>Errore AI: ${data.error}</span>`;
-   }
+      if(data.success){
+        box.innerHTML = `<span>${data.reply}</span>`;
+        chatHistory.push({role:"assistant", content:data.reply});
+      } else if(data.error && data.error.includes("Rate limit")){
+        if(attempt <= maxRetries){
+          box.innerHTML = `<span>Attendere qualche secondo, sto ritentando... (tentativo ${attempt})</span>`;
+          setTimeout(trySend, 5000); // ritenta dopo 5 secondi
+        } else {
+          box.innerHTML = `<span>Errore AI: limite di richieste superato. Riprova più tardi.</span>`;
+        }
+      } else {
+        box.innerHTML = `<span>Errore AI: ${data.error}</span>`;
+      }
 
- } catch(err){
-   document.getElementById(`ai_${loadId}`).innerHTML = `<span>Errore connessione server</span>`;
- }
+    } catch(err){
+      const box = document.getElementById(`ai_${loadId}`);
+      if(attempt <= maxRetries){
+        box.innerHTML = `<span>Connessione persa, ritento (tentativo ${attempt})...</span>`;
+        setTimeout(trySend, 5000);
+      } else {
+        box.innerHTML = `<span>Errore connessione server</span>`;
+      }
+    }
 
- chat.scrollTop = chat.scrollHeight;
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  trySend();
 };
 
 /* ENTER */
 msg.addEventListener("keydown",e=>{
- if(e.key==="Enter" && !e.shiftKey){
-   e.preventDefault();
-   sendBtn.click();
- }
+  if(e.key==="Enter" && !e.shiftKey){
+    e.preventDefault();
+    sendBtn.click();
+  }
 });
 </script>
+
 
 </body>
 </html>
