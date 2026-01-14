@@ -17,44 +17,31 @@ const openai = new OpenAI({
 // 💾 memoria chat temporanea per utente (molto semplice)
 let conversations = {};
 
-// 🧠 Endpoint CHAT AI
 app.post("/chat", async (req, res) => {
   try {
-    const { userId, message } = req.body;
 
-    if (!message) {
-      return res.json({ success: false, error: "Nessun messaggio" });
+    const { history } = req.body;
+
+    if (!history || !Array.isArray(history)) {
+      return res.json({ success: false, error: "Storia chat mancante" });
     }
 
-    // se non esiste la conversazione, creala
-    if (!conversations[userId]) {
-      conversations[userId] = [];
-    }
-
-    // aggiungi messaggio utente alla memoria
-    conversations[userId].push({ role: "user", content: message });
-
-    // chiama openai includendo memoria conversazione
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      messages: conversations[userId]
+      messages: history
     });
 
-    const reply = completion.choices[0].message.content;
-
-    // salva risposta AI in memoria
-    conversations[userId].push({ role: "assistant", content: reply });
-
-    return res.json({
+    res.json({
       success: true,
-      reply
+      reply: completion.choices[0].message.content
     });
 
   } catch (err) {
     console.error(err);
-    return res.json({ success: false, error: err.message });
+    res.json({ success: false, error: err.message });
   }
 });
+
 
 // 🚀 avvio server
 const port = process.env.PORT || 3000;
