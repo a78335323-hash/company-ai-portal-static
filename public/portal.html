@@ -46,41 +46,8 @@ textarea { flex:1; resize:none; padding:14px; border-radius:12px; border:1px sol
 </style>
 </head>
 <body>
-<div class="sidebar" id="sidebar">
-  <div>
-    <div class="sidebar-btn" onclick="newChat()">Nuova chat</div>
-    <div class="sidebar-btn search-wrapper"><input id="search" placeholder="Cerca chat"></div>
-    <div class="sidebar-btn" onclick="showPromemoria()">Promemoria</div>
 
-    <!-- 🔔 NUOVO PULSANTE TELEFONATE -->
-    <div class="sidebar-btn" onclick="showTelefonate()">Telefonate</div>
-
-    <div class="chat-title">Le tue chat</div>
-    <div id="chatList">
-      <div class="chat-item">Preventivo Bobman</div>
-      <div class="chat-item">Fattura Rossi</div>
-      <div class="chat-item">Listino 2025</div>
-    </div>
-  </div>
-
-  <div class="profile-box">
-    <div class="avatar" id="avatar"></div>
-    <div class="profile-name" id="profileName"></div>
-    <button class="change" onclick="location.href='index.html'">cambia</button>
-  </div>
-</div>
-
-<div class="main">
-  <a id="logoLink" target="_blank"><img id="logo"></a>
-  <div class="container">
-    <div class="chat" id="chat"></div>
-    <div class="input" id="inputBox">
-      <button class="mic-btn" id="mic">🎤</button>
-      <textarea id="msg" placeholder="Scrivi un messaggio..."></textarea>
-      <button class="send" id="send">Invia</button>
-    </div>
-  </div>
-</div>
+<!-- TUTTO UGUALE SOPRA -->
 
 <script>
 const user = localStorage.getItem("user") || "Utente";
@@ -97,6 +64,9 @@ const msg = document.getElementById("msg");
 const search = document.getElementById("search");
 const inputBox = document.getElementById("inputBox");
 const micBtn = document.getElementById("mic");
+
+// MEMORIA CHAT 🔥
+window.chatHistory = [];
 
 // AVATAR E NOME
 avatar.textContent = user.slice(0,2).toUpperCase();
@@ -122,143 +92,54 @@ function ai(text){
 }
 ai("Come posso aiutarti?");
 
-function clearSelection(){
-  document.querySelectorAll(".chat-item").forEach(i=>i.classList.remove("active"));
-}
-
+// RESET CHAT — RESETTA MEMORIA
 function newChat(){
   clearSelection();
   chat.innerHTML="";
-  inputBox.style.display="flex";
+  window.chatHistory = [];
   ai("Come posso aiutarti?");
 }
 
-function showPromemoria(){
-  clearSelection();
-  chat.innerHTML=`
-    <div style="font-size:17px; line-height:1.7">
-      <h3>Promemoria</h3>
-      <p>Chiamare cliente</p>
-      <p>Inviare fattura</p>
-      <p>Controllare ordini</p>
-
-      <!-- 🔔 COLLEGAMENTO CON TELEFONATE FUTURO -->
-      <p>📞 Richiamare interessati</p>
-      <p>📧 Reinviare email</p>
-    </div>
-  `;
-  inputBox.style.display="none";
-}
-
-<!-- 🚀 NUOVA SEZIONE TELEFONATE -->
-function showTelefonate(){
-  clearSelection();
-  chat.innerHTML = `
-    <div style="font-size:17px; line-height:1.7">
-      <h3>Telefonate</h3>
-
-      <h4>✔️ Interessati</h4>
-      <table border="1" cellpadding="6" style="border-collapse:collapse; width:100%;">
-        <tr><th>Nome</th><th>Numero</th><th>Data chiamata</th></tr>
-        <tr><td>Mario Rossi</td><td>3331234567</td><td>05/01/2026</td></tr>
-        <tr><td>Lucia Bianchi</td><td>3499876543</td><td>07/01/2026</td></tr>
-      </table>
-
-      <br>
-
-      <h4>📧 Da reinviare email</h4>
-      <table border="1" cellpadding="6" style="border-collapse:collapse; width:100%;">
-        <tr><th>Nome</th><th>Email</th><th>Data chiamata</th></tr>
-        <tr><td>Paolo Verdi</td><td>paolo@example.com</td><td>06/01/2026</td></tr>
-        <tr><td>Anna Blu</td><td>anna@example.com</td><td>08/01/2026</td></tr>
-      </table>
-    </div>
-  `;
-  inputBox.style.display="none";
-}
-
+// INVIO MESSAGGIO CON MEMORIA 🔥
 sendBtn.onclick = async () => {
 
   if (!msg.value.trim()) return;
 
   const userText = msg.value;
 
-  // mostra messaggio utente
   chat.innerHTML += `<div class="msg-user"><span>${userText}</span></div>`;
   msg.value = "";
-  msg.style.height = "48px";
 
-  // mostra "sto elaborando"
   const loadingId = Date.now();
   chat.innerHTML += `<div class="msg-ai" id="ai_${loadingId}"><span>Sto elaborando la risposta...</span></div>`;
-  chat.scrollTop = chat.scrollHeight;
+
+  // ➕ AGGIUNGI A MEMORIA
+  window.chatHistory.push({ role:"user", content:userText });
 
   try {
     const response = await fetch("https://company-ai-portal-static.onrender.com/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: userText })
+      body: JSON.stringify({ history: window.chatHistory })
     });
 
     const data = await response.json();
-
-    // sostituisci il loading con la risposta reale
     const box = document.getElementById(`ai_${loadingId}`);
 
     if (data.success) {
+
+      // ➕ MEMORIZZA RISPOSTA AI
+      window.chatHistory.push({ role:"assistant", content:data.reply });
+
       box.innerHTML = `<span>${data.reply}</span>`;
     } else {
       box.innerHTML = `<span>Errore AI: ${data.error}</span>`;
     }
 
   } catch (e) {
-    const box = document.getElementById(`ai_${loadingId}`);
-    box.innerHTML = `<span>Errore di connessione al server.</span>`;
+    document.getElementById(`ai_${loadingId}`).innerHTML = `<span>Errore di connessione</span>`;
   }
-
-  chat.scrollTop = chat.scrollHeight;
 };
-
-
-// ENTER
-msg.addEventListener("keydown", e => {
-  if(e.key==="Enter" && !e.shiftKey){
-    e.preventDefault();
-    sendBtn.click();
-  }
-});
-
-// AUTO-RIDIMENSIONAMENTO
-msg.addEventListener("input", ()=>{ msg.style.height="48px"; msg.style.height=msg.scrollHeight+"px"; });
-
-// CERCA CHAT
-search.addEventListener("input", ()=>{
-  const val = search.value.toLowerCase();
-  document.querySelectorAll(".chat-item").forEach(item=>{
-    item.style.display = item.textContent.toLowerCase().includes(val) ? "block" : "none";
-  });
-});
-
-document.querySelectorAll(".chat-item").forEach(item=>{
-  item.onclick = ()=>{
-    clearSelection();
-    item.classList.add("active");
-  };
-});
-
-// MICROFONO
-let recognition;
-if('webkitSpeechRecognition' in window){
-  recognition = new webkitSpeechRecognition();
-  recognition.lang='it-IT';
-  recognition.continuous=false;
-  recognition.interimResults=false;
-  micBtn.addEventListener('click', ()=> recognition.start());
-  recognition.onresult=(event)=>{ msg.value+=event.results[0][0].transcript; msg.focus(); };
-} else {
-  micBtn.disabled=true;
-  micBtn.title="Il tuo browser non supporta la trascrizione vocale";
-}
 </script>
 </body>
 </html>
