@@ -126,7 +126,7 @@ const micBtn = document.getElementById("mic");
 
 /* 🔥 MEMORIA CHAT IN PAGINA */
 let chatHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
-let chatModified = false; // flag per sapere se la chat è stata modificata
+let chatModified = false; // flag per modifiche
 
 /* AVATAR */
 avatar.textContent = user.slice(0,2).toUpperCase();
@@ -176,8 +176,20 @@ if(chatHistory.length === 0) ai("Come posso aiutarti?");
    FUNZIONE SALVA CHAT
 =================================*/
 function saveChat(){
+ if(chatHistory.length === 0) return;
+ let name = prompt("Inserisci il nome della chat da salvare:", "Nuova Chat");
+ if(!name) return;
  localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
  chatModified = false;
+
+ // aggiunge al pannello chatList se non presente
+ const existing = Array.from(document.querySelectorAll("#chatList .chat-item")).some(d => d.textContent === name);
+ if(!existing){
+   const div = document.createElement("div");
+   div.className="chat-item";
+   div.textContent = name;
+   document.getElementById("chatList").appendChild(div);
+ }
  alert("Chat salvata correttamente!");
 }
 
@@ -186,11 +198,13 @@ function saveChat(){
 =================================*/
 function downloadChat(){
  if(chatHistory.length === 0) return;
+ let name = prompt("Inserisci il nome file per il download:", "chat.txt");
+ if(!name) return;
  let text = chatHistory.map(m => (m.role==='user'?'Utente':'AI') + ': ' + m.content).join("\n");
  let blob = new Blob([text], {type:"text/plain"});
  let a = document.createElement("a");
  a.href = URL.createObjectURL(blob);
- a.download = "chat.txt";
+ a.download = name;
  a.click();
  URL.revokeObjectURL(a.href);
 }
@@ -250,16 +264,15 @@ function askSaveChat(callback){
      saveChat();
    }
  }
- callback(); // esegue l'azione di navigazione
+ callback();
 }
 
-/* esempio override per pulsanti */
+/* override pulsanti sidebar */
 function newChatWrapper(){ askSaveChat(()=>{ chat.innerHTML=""; chatHistory=[]; ai("Come posso aiutarti?"); }); }
 function showPromemoriaWrapper(){ askSaveChat(()=>{ showPromemoria(); }); }
 function showTelefonateWrapper(){ askSaveChat(()=>{ showTelefonate(); }); }
 function changeUserWrapper(){ askSaveChat(()=>{ location.href='index.html'; }); }
 
-/* sostituire onclick dei pulsanti */
 document.querySelector(".sidebar-btn[onclick='newChat()']").onclick = newChatWrapper;
 document.querySelector(".sidebar-btn[onclick='showPromemoria()']").onclick = showPromemoriaWrapper;
 document.querySelector(".sidebar-btn[onclick='showTelefonate()']").onclick = showTelefonateWrapper;
@@ -275,7 +288,6 @@ window.addEventListener("beforeunload", (e)=>{
  }
 });
 </script>
-
 
 </body>
 </html>
