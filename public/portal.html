@@ -20,9 +20,10 @@ body { margin:0; font-family:Arial; display:flex; height:100vh; }
 
 /* CHAT LIST */
 .chat-title { font-size:13px; opacity:0.85; margin:14px 0 6px; }
-.chat-item { padding:8px; border-radius:8px; cursor:pointer; font-size:14px; }
+.chat-item { padding:8px; border-radius:8px; cursor:pointer; font-size:14px; display:flex; justify-content:space-between; align-items:center; }
 .chat-item:hover { background: rgba(255,255,255,0.18); }
 .chat-item.active { background: rgba(255,255,255,0.35); }
+.chat-item .delete-btn { color:red; cursor:pointer; font-weight:bold; margin-left:8px; }
 
 /* PROFILO */
 .profile-box { padding:10px; border-radius:10px; background:rgba(255,255,255,0.18); display:flex; align-items:center; }
@@ -55,7 +56,7 @@ textarea { flex:1; resize:none; padding:14px; border-radius:12px; border:1px sol
 /* MICROFONO */
 .mic-btn { margin-right:10px; padding:0; width:44px; height:44px; border-radius:50%; border:none; background:#4285f4; color:white; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
 
-/* PULSANTI SALVA / DOWNLOAD */
+/* PULSANTI SALVA / DOWNLOAD FUORI SIDEBAR */
 .top-buttons { position:absolute; top:10px; left:10px; z-index:999; display:flex; flex-direction:column; gap:6px; }
 .top-buttons button { padding:8px 12px; border-radius:6px; border:1px solid #ccc; background:#fff; color:#333; cursor:pointer; }
 .top-buttons button:hover { background:#eee; }
@@ -138,13 +139,13 @@ sendBtn.style.background = theme.send;
 logo.src = theme.logo;
 logoLink.href = theme.link;
 
+ai("Come posso aiutarti?");
+
 /* ===============================
    FUNZIONI CHAT
 =================================*/
 function ai(text){ chat.innerHTML += `<div class="msg-ai"><span>${text}</span></div>`; chat.scrollTop=chat.scrollHeight; chatModified=true; }
 function userMsg(text){ chat.innerHTML += `<div class="msg-user"><span>${text}</span></div>`; chat.scrollTop=chat.scrollHeight; chatModified=true; }
-
-ai("Come posso aiutarti?");
 
 /* ===============================
    SALVATAGGIO / DOWNLOAD
@@ -165,7 +166,17 @@ function saveChat(){
 function addChatToList(name){
   const div = document.createElement("div");
   div.className="chat-item";
-  div.textContent=name;
+  div.innerHTML = `<span>${name}</span><span class="delete-btn">×</span>`;
+  const deleteBtn = div.querySelector(".delete-btn");
+  deleteBtn.onclick = (e)=>{
+    e.stopPropagation();
+    if(confirm("Sei sicuro di voler eliminare questa chat?")){
+      let savedChats = JSON.parse(localStorage.getItem("savedChats")||"[]");
+      savedChats = savedChats.filter(c=>c.name!==name);
+      localStorage.setItem("savedChats",JSON.stringify(savedChats));
+      div.remove();
+    }
+  };
   div.onclick = ()=>{
     if(chatModified && chatHistory.length>0 && !confirm("Ci sono modifiche non salvate, procedere?")) return;
     const savedChats = JSON.parse(localStorage.getItem("savedChats")||"[]");
@@ -239,7 +250,7 @@ window.addEventListener("beforeunload",(e)=>{ if(chatModified && chatHistory.len
 =================================*/
 document.getElementById("search").addEventListener("input",e=>{
   let f=e.target.value.toLowerCase();
-  document.querySelectorAll("#chatList .chat-item").forEach(item=>{ item.style.display=item.textContent.toLowerCase().includes(f)?"block":"none"; });
+  document.querySelectorAll("#chatList .chat-item").forEach(item=>{ item.style.display=item.textContent.toLowerCase().includes(f)?"flex":"none"; });
 });
 
 /* ===============================
