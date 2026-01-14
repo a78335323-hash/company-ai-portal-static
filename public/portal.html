@@ -8,7 +8,7 @@
 body { margin:0; font-family:Arial; display:flex; height:100vh; }
 
 /* SIDEBAR */
-.sidebar { width:270px; padding:14px; color:white; display:flex; flex-direction:column; justify-content:space-between; }
+.sidebar { width:270px; padding:14px; color:white; display:flex; flex-direction:column; justify-content:space-between; background:#2ecc71; }
 
 /* PULSANTI UNIFICATI */
 .sidebar-btn { width:100%; padding:12px; margin-bottom:10px; border-radius:10px; font-size:14px; cursor:pointer; text-align:center; background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.45); box-sizing:border-box; }
@@ -31,7 +31,7 @@ body { margin:0; font-family:Arial; display:flex; height:100vh; }
 .change { background:white; color:#333; border:none; font-size:11px; padding:4px 8px; border-radius:6px; cursor:pointer; }
 
 /* MAIN */
-.main { flex:1; padding:30px; position:relative; display:flex; justify-content:center; }
+.main { flex:1; padding:30px; position:relative; display:flex; justify-content:center; background:#f7f7f7; }
 .container { width:88%; display:flex; flex-direction:column; }
 
 /* LOGO */
@@ -50,19 +50,24 @@ body { margin:0; font-family:Arial; display:flex; height:100vh; }
 /* INPUT */
 .input { margin-top:12px; display:flex; align-items:center; }
 textarea { flex:1; resize:none; padding:14px; border-radius:12px; border:1px solid #ccc; min-height:48px; max-height:160px; font-size:15px; }
-.send { margin-left:10px; padding:0 22px; border-radius:12px; border:none; color:white; cursor:pointer; font-size:15px; }
+.send { margin-left:10px; padding:0 22px; border-radius:12px; border:none; color:white; cursor:pointer; font-size:15px; background:#2ecc71; }
 
 /* MICROFONO */
 .mic-btn { margin-right:10px; padding:0; width:44px; height:44px; border-radius:50%; border:none; background:#4285f4; color:white; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+
+/* PULSANTI SALVA / DOWNLOAD */
+.top-buttons { position:absolute; top:10px; left:10px; z-index:999; display:flex; flex-direction:column; gap:6px; }
+.top-buttons button { padding:8px 12px; border-radius:6px; border:1px solid #ccc; background:#fff; color:#333; cursor:pointer; }
+.top-buttons button:hover { background:#eee; }
 </style>
 </head>
 
 <body>
 
-<!-- PULSANTI SALVA / SCARICA -->
-<div style="position:absolute; top:10px; left:10px; z-index:999; display:flex; flex-direction:column; gap:6px;">
-  <button class="sidebar-btn" id="saveBtn" style="background:#f1f1f1; color:#333; border:1px solid #ccc;">Salva chat</button>
-  <button class="sidebar-btn" id="downloadBtn" style="background:#f1f1f1; color:#333; border:1px solid #ccc;">Scarica .txt</button>
+<!-- PULSANTI SALVA / DOWNLOAD -->
+<div class="top-buttons">
+  <button id="saveBtn">Salva chat</button>
+  <button id="downloadBtn">Scarica .txt</button>
 </div>
 
 <div class="sidebar" id="sidebar">
@@ -74,11 +79,7 @@ textarea { flex:1; resize:none; padding:14px; border-radius:12px; border:1px sol
     <div class="sidebar-btn" id="promemoriaBtn">Promemoria</div>
     <div class="sidebar-btn" id="telefonateBtn">Telefonate</div>
     <div class="chat-title">Le tue chat</div>
-    <div id="chatList">
-      <div class="chat-item">Preventivo Bobman</div>
-      <div class="chat-item">Fattura Rossi</div>
-      <div class="chat-item">Listino 2025</div>
-    </div>
+    <div id="chatList"></div>
   </div>
   <div class="profile-box">
     <div class="avatar" id="avatar"></div>
@@ -105,6 +106,7 @@ textarea { flex:1; resize:none; padding:14px; border-radius:12px; border:1px sol
 =================================*/
 const user = localStorage.getItem("user") || "Utente";
 const company = localStorage.getItem("company") || "Lucagri";
+
 const avatar = document.getElementById("avatar");
 const profileName = document.getElementById("profileName");
 const sidebar = document.getElementById("sidebar");
@@ -117,8 +119,9 @@ const inputBox = document.getElementById("inputBox");
 const micBtn = document.getElementById("mic");
 const saveBtn = document.getElementById("saveBtn");
 const downloadBtn = document.getElementById("downloadBtn");
+const chatList = document.getElementById("chatList");
 
-let chatHistory = []; // parte sempre vuota
+let chatHistory = [];
 let chatModified = false;
 
 avatar.textContent = user.slice(0,2).toUpperCase();
@@ -136,31 +139,50 @@ logo.src = theme.logo;
 logoLink.href = theme.link;
 
 /* ===============================
-   CHAT FUNCTIONS
+   FUNZIONI CHAT
 =================================*/
 function ai(text){ chat.innerHTML += `<div class="msg-ai"><span>${text}</span></div>`; chat.scrollTop=chat.scrollHeight; chatModified=true; }
 function userMsg(text){ chat.innerHTML += `<div class="msg-user"><span>${text}</span></div>`; chat.scrollTop=chat.scrollHeight; chatModified=true; }
-ai("Come posso aiutarti?"); // chat iniziale
+
+ai("Come posso aiutarti?");
 
 /* ===============================
    SALVATAGGIO / DOWNLOAD
 =================================*/
 function saveChat(){
-  if(chatHistory.length===0) return;
-  localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
+  if(chatHistory.length===0){ alert("Niente da salvare"); return; }
+  let name = prompt("Nome della chat","");
+  if(!name) return;
+  let savedChats = JSON.parse(localStorage.getItem("savedChats")||"[]");
+  savedChats.push({name:name,history:chatHistory});
+  localStorage.setItem("savedChats",JSON.stringify(savedChats));
+  addChatToList(name);
+  chatHistory=[]; chat.innerHTML=""; ai("Come posso aiutarti?");
   chatModified=false;
-  alert("Chat salvata!");
-  chat.innerHTML=""; chatHistory=[]; ai("Come posso aiutarti?");
+  alert("Chat salvata come '"+name+"'");
 }
+
+function addChatToList(name){
+  const div = document.createElement("div");
+  div.className="chat-item";
+  div.textContent=name;
+  div.onclick = ()=>{
+    if(chatModified && chatHistory.length>0 && !confirm("Ci sono modifiche non salvate, procedere?")) return;
+    const savedChats = JSON.parse(localStorage.getItem("savedChats")||"[]");
+    const c = savedChats.find(c=>c.name===name);
+    if(c){ chat.innerHTML=""; chatHistory=c.history; chatHistory.forEach(m=>{ if(m.role==='user') userMsg(m.content); else ai(m.content); }); chatModified=false; inputBox.style.display="flex"; }
+  };
+  chatList.appendChild(div);
+}
+
 function downloadChat(){
-  if(chatHistory.length===0) return;
-  let fileName=prompt("Nome del file (senza estensione)","chat");
+  if(chatHistory.length===0){ alert("Niente da scaricare"); return; }
+  let fileName = prompt("Nome file","");
   if(!fileName) return;
-  let text=chatHistory.map(m=>(m.role==='user'?'Utente':'AI')+": "+m.content).join("\n");
-  let blob=new Blob([text],{type:"text/plain"});
-  let a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download=fileName+".txt";
+  let text = chatHistory.map(m=>(m.role==='user'?'Utente':'AI')+": "+m.content).join("\n");
+  let a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text],{type:"text/plain"}));
+  a.download = fileName+".txt";
   a.click();
   URL.revokeObjectURL(a.href);
 }
@@ -168,16 +190,16 @@ function downloadChat(){
 /* ===============================
    INVIO MESSAGGI
 =================================*/
-sendBtn.onclick=async()=>{
+sendBtn.onclick = async ()=>{
   if(!msg.value.trim()) return;
-  const text=msg.value; msg.value="";
+  const text = msg.value; msg.value="";
   userMsg(text); chatHistory.push({role:"user",content:text});
-  const loadId=Date.now();
-  chat.innerHTML+=`<div class="msg-ai" id="ai_${loadId}"><span>Sto elaborando la risposta...</span></div>`;
+  const loadId = Date.now();
+  chat.innerHTML += `<div class="msg-ai" id="ai_${loadId}"><span>Sto elaborando la risposta...</span></div>`;
   try{
-    const res=await fetch("https://company-ai-portal-static.onrender.com/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({history:chatHistory})});
-    const data=await res.json();
-    const box=document.getElementById(`ai_${loadId}`);
+    const res = await fetch("https://company-ai-portal-static.onrender.com/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({history:chatHistory})});
+    const data = await res.json();
+    const box = document.getElementById(`ai_${loadId}`);
     if(data.success){ box.innerHTML=`<span>${data.reply}</span>`; chatHistory.push({role:"assistant",content:data.reply}); chatModified=true; }
     else box.innerHTML=`<span>Errore AI: ${data.error}</span>`;
   }catch(err){ document.getElementById(`ai_${loadId}`).innerHTML=`<span>Errore connessione server</span>`; }
@@ -185,36 +207,53 @@ sendBtn.onclick=async()=>{
 msg.addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); sendBtn.click(); } });
 
 /* ===============================
-   WRAPPER NAVIGAZIONE
+   MICROFONO ATTIVO
 =================================*/
-function askSaveChat(callback){ if(chatModified && chatHistory.length>0){ if(confirm("La chat ha modifiche non salvate. Vuoi salvare?")) saveChat(); } callback(); }
-document.getElementById("newChatBtn").onclick=()=>askSaveChat(()=>{ chat.innerHTML=""; chatHistory=[]; chatModified=false; ai("Come posso aiutarti?"); inputBox.style.display="flex"; });
-document.getElementById("promemoriaBtn").onclick=()=>askSaveChat(showPromemoria);
-document.getElementById("telefonateBtn").onclick=()=>askSaveChat(showTelefonate);
-document.getElementById("changeUserBtn").onclick=()=>askSaveChat(()=>{ location.href='index.html'; });
+if('webkitSpeechRecognition' in window){
+  const recognition = new webkitSpeechRecognition();
+  recognition.lang="it-IT";
+  recognition.continuous=false;
+  recognition.interimResults=false;
+  micBtn.onclick=()=> recognition.start();
+  recognition.onresult = function(event){
+    const spoken = event.results[0][0].transcript;
+    msg.value=spoken;
+    sendBtn.click();
+  };
+}
 
 /* ===============================
-   FRECCIA BACK / USCITA PAGINA
+   NAVIGAZIONE
 =================================*/
-window.addEventListener("beforeunload",(e)=>{ if(chatModified && chatHistory.length>0){ e.preventDefault(); e.returnValue="La chat ha modifiche non salvate. Vuoi salvare?"; } });
+function askSave(callback){ if(chatModified && chatHistory.length>0){ if(confirm("La chat ha modifiche non salvate, vuoi salvare?")) saveChat(); } callback(); }
+
+document.getElementById("newChatBtn").onclick = ()=>askSave(()=>{ chatHistory=[]; chat.innerHTML=""; ai("Come posso aiutarti?"); inputBox.style.display="flex"; });
+document.getElementById("promemoriaBtn").onclick = ()=>askSave(showPromemoria);
+document.getElementById("telefonateBtn").onclick = ()=>askSave(showTelefonate);
+document.getElementById("changeUserBtn").onclick = ()=>askSave(()=>{ location.href='index.html'; });
+
+window.addEventListener("beforeunload",(e)=>{ if(chatModified && chatHistory.length>0){ e.preventDefault(); e.returnValue="La chat ha modifiche non salvate, vuoi salvare?"; } });
 
 /* ===============================
    CERCA CHAT
 =================================*/
-document.getElementById("search").addEventListener("input",e=>{ let filter=e.target.value.toLowerCase(); document.querySelectorAll("#chatList .chat-item").forEach(item=>{ item.style.display=item.textContent.toLowerCase().includes(filter)?"block":"none"; }); });
+document.getElementById("search").addEventListener("input",e=>{
+  let f=e.target.value.toLowerCase();
+  document.querySelectorAll("#chatList .chat-item").forEach(item=>{ item.style.display=item.textContent.toLowerCase().includes(f)?"block":"none"; });
+});
 
 /* ===============================
    PULSANTI SALVA / DOWNLOAD
 =================================*/
-saveBtn.onclick=saveChat;
-downloadBtn.onclick=downloadChat;
+saveBtn.onclick = saveChat;
+downloadBtn.onclick = downloadChat;
 
 /* ===============================
    SEZIONI STATICHE
 =================================*/
-function showPromemoria(){ chat.innerHTML=`<div style="font-size:17px; line-height:1.7"><h3>Promemoria</h3><p>Chiamare cliente</p><p>Inviare fattura</p><p>Controllare ordini</p><p>📞 Richiamare interessati</p><p>📧 Reinviare email</p></div>`; inputBox.style.display="none"; }
-function showTelefonate(){ chat.innerHTML=`<div style="font-size:17px; line-height:1.7"><h3>Telefonate</h3><h4>✔️ Interessati</h4><table border="1" cellpadding="6" style="border-collapse:collapse; width:100%;"><tr><th>Nome</th><th>Numero</th><th>Data chiamata</th></tr><tr><td>Mario Rossi</td><td>3331234567</td><td>05/01/2026</td></tr><tr><td>Lucia Bianchi</td><td>3499876543</td><td>07/01/2026</td></tr></table><br><h4>📧 Da reinviare email</h4><table border="1" cellpadding="6" style="border-collapse:collapse; width:100%;"><tr><th>Nome</th><th>Email</th><th>Data chiamata</th></tr><tr><td>Paolo Verdi</td><td>paolo@example.com</td><td>06/01/2026</td></tr><tr><td>Anna Blu</td><td>anna@example.com</td><td>08/01/2026</td></tr></table></div>`; inputBox.style.display="none"; }
-</script>
+function showPromemoria(){ chat.innerHTML=`<div style="font-size:17px;line-height:1.7"><h3>Promemoria</h3><p>Chiamare cliente</p><p>Inviare fattura</p><p>Controllare ordini</p><p>📞 Richiamare interessati</p><p>📧 Reinviare email</p></div>`; inputBox.style.display="none"; }
+function showTelefonate(){ chat.innerHTML=`<div style="font-size:17px;line-height:1.7"><h3>Telefonate</h3><h4>✔️ Interessati</h4><table border="1" cellpadding="6" style="border-collapse:collapse;width:100%"><tr><th>Nome</th><th>Numero</th><th>Data chiamata</th></tr><tr><td>Mario Rossi</td><td>3331234567</td><td>05/01/2026</td></tr><tr><td>Lucia Bianchi</td><td>3499876543</td><td>07/01/2026</td></tr></table><br><h4>📧 Da reinviare email</h4><table border="1" cellpadding="6" style="border-collapse:collapse;width:100%"><tr><th>Nome</th><th>Email</th><th>Data chiamata</th></tr><tr><td>Paolo Verdi</td><td>paolo@example.com</td><td>06/01/2026</td></tr><tr><td>Anna Blu</td><td>anna@example.com</td><td>08/01/2026</td></tr></table></div>`; inputBox.style.display="none"; }
 
+</script>
 </body>
 </html>
