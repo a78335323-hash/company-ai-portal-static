@@ -62,14 +62,14 @@ textarea { flex:1; resize:none; padding:14px; border-radius:12px; border:1px sol
 <div class="sidebar" id="sidebar">
 
 <div>
-<div class="sidebar-btn" onclick="newChat()">Nuova chat</div>
+<div class="sidebar-btn" id="newChatBtn">Nuova chat</div>
 
 <div class="sidebar-btn search-wrapper">
 <input id="search" placeholder="Cerca chat">
 </div>
 
-<div class="sidebar-btn" onclick="showPromemoria()">Promemoria</div>
-<div class="sidebar-btn" onclick="showTelefonate()">Telefonate</div>
+<div class="sidebar-btn" id="promemoriaBtn">Promemoria</div>
+<div class="sidebar-btn" id="telefonateBtn">Telefonate</div>
 
 <div class="chat-title">Le tue chat</div>
 
@@ -83,7 +83,7 @@ textarea { flex:1; resize:none; padding:14px; border-radius:12px; border:1px sol
 <div class="profile-box">
 <div class="avatar" id="avatar"></div>
 <div class="profile-name" id="profileName"></div>
-<button class="change" onclick="location.href='index.html'">cambia</button>
+<button class="change" id="changeUserBtn">cambia</button>
 </div>
 
 </div>
@@ -99,6 +99,8 @@ textarea { flex:1; resize:none; padding:14px; border-radius:12px; border:1px sol
 <button class="mic-btn" id="mic">🎤</button>
 <textarea id="msg" placeholder="Scrivi un messaggio..."></textarea>
 <button class="send" id="send">Invia</button>
+<button class="sidebar-btn" id="saveBtn">Salva chat</button>
+<button class="sidebar-btn" id="downloadBtn">Scarica .txt</button>
 </div>
 
 </div>
@@ -120,25 +122,22 @@ const logo = document.getElementById("logo");
 const logoLink = document.getElementById("logoLink");
 const chat = document.getElementById("chat");
 const msg = document.getElementById("msg");
-const search = document.getElementById("search");
 const inputBox = document.getElementById("inputBox");
 const micBtn = document.getElementById("mic");
+const saveBtn = document.getElementById("saveBtn");
+const downloadBtn = document.getElementById("downloadBtn");
 
-/* 🔥 MEMORIA CHAT IN PAGINA */
 let chatHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
 let chatModified = false; // flag per modifiche
 
-/* AVATAR */
 avatar.textContent = user.slice(0,2).toUpperCase();
 profileName.textContent = user;
 
-/* TEMI AZIENDA */
 const companyData = {
  Lucagri:{sidebar:"linear-gradient(180deg,#7de3a2,#2ecc71)",send:"#2ecc71",logo:"logo.png",link:"https://www.lucagri.it/"},
  Agrichampion:{sidebar:"linear-gradient(180deg,#ffdba8,#f39c12)",send:"#f39c12",logo:"logo2.png",link:"https://agrichampion.com/"},
  Cabreganze:{sidebar:"linear-gradient(180deg,#f6e6a8,#d4af37)",send:"#d4af37",logo:"logo3.jpg",link:"https://www.cabreganze.com/"}
 };
-
 const theme = companyData[company] || companyData.Lucagri;
 sidebar.style.background = theme.sidebar;
 sendBtn.style.background = theme.send;
@@ -146,120 +145,86 @@ logo.src = theme.logo;
 logoLink.href = theme.link;
 
 /* ===============================
-   CHAT UI
+   FUNZIONI CHAT
 =================================*/
-
 function ai(text){
  chat.innerHTML += `<div class="msg-ai"><span>${text}</span></div>`;
  chat.scrollTop = chat.scrollHeight;
  chatModified = true;
 }
-
 function userMsg(text){
  chat.innerHTML += `<div class="msg-user"><span>${text}</span></div>`;
  chat.scrollTop = chat.scrollHeight;
  chatModified = true;
 }
 
-/* ripristina chat salvata se presente */
+/* ripristina chat salvata */
 if(chatHistory.length > 0){
- chatHistory.forEach(m => {
-   if(m.role==='user') userMsg(m.content);
-   else ai(m.content);
- });
+ chatHistory.forEach(m => { if(m.role==='user') userMsg(m.content); else ai(m.content); });
 }
-
-/* primo messaggio se chat vuota */
 if(chatHistory.length === 0) ai("Come posso aiutarti?");
 
 /* ===============================
-   FUNZIONE SALVA CHAT
+   SALVATAGGIO / DOWNLOAD
 =================================*/
 function saveChat(){
  if(chatHistory.length === 0) return;
- let name = prompt("Inserisci il nome della chat da salvare:", "Nuova Chat");
- if(!name) return;
  localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
  chatModified = false;
-
- // aggiunge al pannello chatList se non presente
- const existing = Array.from(document.querySelectorAll("#chatList .chat-item")).some(d => d.textContent === name);
- if(!existing){
-   const div = document.createElement("div");
-   div.className="chat-item";
-   div.textContent = name;
-   document.getElementById("chatList").appendChild(div);
- }
  alert("Chat salvata correttamente!");
 }
 
-/* ===============================
-   DOWNLOAD CHAT IN TXT
-=================================*/
 function downloadChat(){
  if(chatHistory.length === 0) return;
- let name = prompt("Inserisci il nome file per il download:", "chat.txt");
- if(!name) return;
+ let fileName = prompt("Nome del file (senza estensione)","chat");
+ if(!fileName) return;
  let text = chatHistory.map(m => (m.role==='user'?'Utente':'AI') + ': ' + m.content).join("\n");
  let blob = new Blob([text], {type:"text/plain"});
  let a = document.createElement("a");
  a.href = URL.createObjectURL(blob);
- a.download = name;
+ a.download = fileName + ".txt";
  a.click();
  URL.revokeObjectURL(a.href);
 }
 
 /* ===============================
-   GESTIONE INVIO MESSAGGI
+   INVIO MESSAGGI
 =================================*/
-
 sendBtn.onclick = async () => {
  if(!msg.value.trim()) return;
  const text = msg.value;
  msg.value = "";
  userMsg(text);
  chatHistory.push({role:"user", content:text});
-
  const loadId = Date.now();
  chat.innerHTML += `<div class="msg-ai" id="ai_${loadId}"><span>Sto elaborando la risposta...</span></div>`;
-
  try{
    const res = await fetch("https://company-ai-portal-static.onrender.com/chat",{
      method:"POST",
      headers:{"Content-Type":"application/json"},
      body:JSON.stringify({history: chatHistory})
    });
-
    const data = await res.json();
    const box = document.getElementById(`ai_${loadId}`);
    if(data.success){
      box.innerHTML = `<span>${data.reply}</span>`;
      chatHistory.push({role:"assistant", content:data.reply});
      chatModified = true;
-   } else {
-     box.innerHTML = `<span>Errore AI: ${data.error}</span>`;
-   }
-
+   } else box.innerHTML = `<span>Errore AI: ${data.error}</span>`;
  } catch(err){
    document.getElementById(`ai_${loadId}`).innerHTML = `<span>Errore connessione server</span>`;
  }
-
  chat.scrollTop = chat.scrollHeight;
 };
-
-/* ENTER */
-msg.addEventListener("keydown",e=>{
- if(e.key==="Enter" && !e.shiftKey){
-   e.preventDefault();
-   sendBtn.click();
- }
+msg.addEventListener("keydown", e=>{
+ if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); sendBtn.click(); }
 });
 
 /* ===============================
-   INTERCETTA USCITE / NAVIGAZIONE
+   WRAPPER NAVIGAZIONE / NUOVA CHAT
 =================================*/
 function askSaveChat(callback){
- if(chatModified){
+ if(chatModified && chatHistory.length > 0){
    if(confirm("La chat ha modifiche non salvate. Vuoi salvare prima di uscire?")){
      saveChat();
    }
@@ -267,26 +232,78 @@ function askSaveChat(callback){
  callback();
 }
 
-/* override pulsanti sidebar */
-function newChatWrapper(){ askSaveChat(()=>{ chat.innerHTML=""; chatHistory=[]; ai("Come posso aiutarti?"); }); }
-function showPromemoriaWrapper(){ askSaveChat(()=>{ showPromemoria(); }); }
-function showTelefonateWrapper(){ askSaveChat(()=>{ showTelefonate(); }); }
+function newChatWrapper(){ askSaveChat(()=>{ chat.innerHTML=""; chatHistory=[]; chatModified=false; ai("Come posso aiutarti?"); }); }
+function promemoriaWrapper(){ askSaveChat(showPromemoria); }
+function telefonateWrapper(){ askSaveChat(showTelefonate); }
 function changeUserWrapper(){ askSaveChat(()=>{ location.href='index.html'; }); }
 
-document.querySelector(".sidebar-btn[onclick='newChat()']").onclick = newChatWrapper;
-document.querySelector(".sidebar-btn[onclick='showPromemoria()']").onclick = showPromemoriaWrapper;
-document.querySelector(".sidebar-btn[onclick='showTelefonate()']").onclick = showTelefonateWrapper;
-document.querySelector(".change").onclick = changeUserWrapper;
+/* sostituisci onclick */
+document.getElementById("newChatBtn").onclick = newChatWrapper;
+document.getElementById("promemoriaBtn").onclick = promemoriaWrapper;
+document.getElementById("telefonateBtn").onclick = telefonateWrapper;
+document.getElementById("changeUserBtn").onclick = changeUserWrapper;
 
 /* ===============================
-   INTERCETTA FRECCIA BACK / CHIUDI PAGINA
+   FRECCIA BACK / USCITA PAGINA
 =================================*/
 window.addEventListener("beforeunload", (e)=>{
- if(chatModified){
+ if(chatModified && chatHistory.length > 0){
    e.preventDefault();
    e.returnValue = "La chat ha modifiche non salvate. Vuoi salvare prima di uscire?";
  }
 });
+
+/* ===============================
+   CERCA CHAT
+=================================*/
+document.getElementById("search").addEventListener("input", e=>{
+ let filter = e.target.value.toLowerCase();
+ document.querySelectorAll("#chatList .chat-item").forEach(item=>{
+   item.style.display = item.textContent.toLowerCase().includes(filter) ? "block" : "none";
+ });
+});
+
+/* ===============================
+   PULSANTI SALVA / DOWNLOAD
+=================================*/
+saveBtn.onclick = saveChat;
+downloadBtn.onclick = downloadChat;
+
+/* ===============================
+   SEZIONI STATICHE
+=================================*/
+function showPromemoria(){
+ chat.innerHTML = `
+ <div style="font-size:17px; line-height:1.7">
+   <h3>Promemoria</h3>
+   <p>Chiamare cliente</p>
+   <p>Inviare fattura</p>
+   <p>Controllare ordini</p>
+   <p>📞 Richiamare interessati</p>
+   <p>📧 Reinviare email</p>
+ </div>`;
+ inputBox.style.display="none";
+}
+function showTelefonate(){
+ chat.innerHTML = `
+ <div style="font-size:17px; line-height:1.7">
+ <h3>Telefonate</h3>
+ <h4>✔️ Interessati</h4>
+ <table border="1" cellpadding="6" style="border-collapse:collapse; width:100%;">
+ <tr><th>Nome</th><th>Numero</th><th>Data chiamata</th></tr>
+ <tr><td>Mario Rossi</td><td>3331234567</td><td>05/01/2026</td></tr>
+ <tr><td>Lucia Bianchi</td><td>3499876543</td><td>07/01/2026</td></tr>
+ </table>
+ <br>
+ <h4>📧 Da reinviare email</h4>
+ <table border="1" cellpadding="6" style="border-collapse:collapse; width:100%;">
+ <tr><th>Nome</th><th>Email</th><th>Data chiamata</th></tr>
+ <tr><td>Paolo Verdi</td><td>paolo@example.com</td><td>06/01/2026</td></tr>
+ <tr><td>Anna Blu</td><td>anna@example.com</td><td>08/01/2026</td></tr>
+ </table>
+ </div>`;
+ inputBox.style.display="none";
+}
 </script>
 
 </body>
