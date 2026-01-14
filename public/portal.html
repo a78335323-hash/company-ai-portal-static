@@ -177,14 +177,47 @@ function showTelefonate(){
   inputBox.style.display="none";
 }
 
-// INVIO MESSAGGIO
-sendBtn.onclick = () => {
-  if(!msg.value.trim()) return;
-  chat.innerHTML += `<div class="msg-user"><span>${msg.value}</span></div>`;
-  msg.value="";
-  msg.style.height="48px";
-  setTimeout(()=>ai("Sto elaborando la risposta..."),700);
+// INVIO MESSAGGIO CON CHIAMATA AL SERVER
+sendBtn.onclick = async () => {
+
+  if (!msg.value.trim()) return;
+
+  const userMessage = msg.value;
+
+  chat.innerHTML += `<div class="msg-user"><span>${userMessage}</span></div>`;
+  msg.value = "";
+  msg.style.height = "48px";
+
+  ai("Sto elaborando la risposta...");
+
+  try {
+
+    const res = await fetch("https://company-ai-portal-static.onrender.com/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: localStorage.getItem("user") || "anonimo",
+        message: userMessage
+      })
+    });
+
+    const data = await res.json();
+
+    // elimina il "Sto elaborando…"
+    chat.lastChild.remove();
+
+    if (data.success) {
+      ai(data.reply);
+    } else {
+      ai("Errore server: " + data.error);
+    }
+
+  } catch (err) {
+    chat.lastChild.remove();
+    ai("Errore di connessione al server");
+  }
 };
+
 
 // ENTER
 msg.addEventListener("keydown", e => {
