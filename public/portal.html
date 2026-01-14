@@ -177,45 +177,46 @@ function showTelefonate(){
   inputBox.style.display="none";
 }
 
-// INVIO MESSAGGIO CON CHIAMATA AL SERVER
 sendBtn.onclick = async () => {
 
   if (!msg.value.trim()) return;
 
-  const userMessage = msg.value;
+  const userText = msg.value;
 
-  chat.innerHTML += `<div class="msg-user"><span>${userMessage}</span></div>`;
+  // mostra messaggio utente
+  chat.innerHTML += `<div class="msg-user"><span>${userText}</span></div>`;
   msg.value = "";
   msg.style.height = "48px";
 
-  ai("Sto elaborando la risposta...");
+  // mostra "sto elaborando"
+  const loadingId = Date.now();
+  chat.innerHTML += `<div class="msg-ai" id="ai_${loadingId}"><span>Sto elaborando la risposta...</span></div>`;
+  chat.scrollTop = chat.scrollHeight;
 
   try {
-
-    const res = await fetch("https://company-ai-portal-static.onrender.com/chat", {
+    const response = await fetch("https://company-ai-portal-static.onrender.com/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: localStorage.getItem("user") || "anonimo",
-        message: userMessage
-      })
+      body: JSON.stringify({ message: userText })
     });
 
-    const data = await res.json();
+    const data = await response.json();
 
-    // elimina il "Sto elaborando…"
-    chat.lastChild.remove();
+    // sostituisci il loading con la risposta reale
+    const box = document.getElementById(`ai_${loadingId}`);
 
     if (data.success) {
-      ai(data.reply);
+      box.innerHTML = `<span>${data.reply}</span>`;
     } else {
-      ai("Errore server: " + data.error);
+      box.innerHTML = `<span>Errore AI: ${data.error}</span>`;
     }
 
-  } catch (err) {
-    chat.lastChild.remove();
-    ai("Errore di connessione al server");
+  } catch (e) {
+    const box = document.getElementById(`ai_${loadingId}`);
+    box.innerHTML = `<span>Errore di connessione al server.</span>`;
   }
+
+  chat.scrollTop = chat.scrollHeight;
 };
 
 
