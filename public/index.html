@@ -37,20 +37,18 @@ select,
 input {
     width: 100%;
     height: 48px;
-    margin-bottom: 18px;
     border-radius: 8px;
     border: 1px solid #ccc;
     font-size: 14px;
     text-align: center;
     box-sizing: border-box;
     padding: 0 14px;
-    line-height: 48px;
+    margin-bottom: 18px;
 }
 
-/* PLACEHOLDER PERFETTO */
+/* PLACEHOLDER PERFETTAMENTE CENTRATO */
 input::placeholder {
     text-align: center;
-    line-height: 48px;
 }
 
 /* PASSWORD */
@@ -59,22 +57,19 @@ input::placeholder {
 }
 
 .password-wrapper input {
-    padding-right: 54px;
+    padding-right: 48px; /* spazio per l’occhio */
 }
 
-/* OCCHIO — CENTRO ASSOLUTO */
+/* OCCHIO — CENTRO REALE */
 .togglePassword {
     position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    padding-right: 14px;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
     font-size: 18px;
     cursor: pointer;
     color: #555;
     user-select: none;
-    pointer-events: auto;
 }
 
 /* REMEMBER */
@@ -91,7 +86,6 @@ input::placeholder {
     width: auto;
     height: auto;
     margin: 0;
-    line-height: normal;
 }
 
 /* BUTTON */
@@ -122,22 +116,18 @@ button {
 
     <h2>Gestione personale AI</h2>
 
-    <!-- AZIENDA -->
     <select id="company">
         <option value="Lucagri">Lucagri</option>
         <option value="Agrichampion">Agrichampion</option>
     </select>
 
-    <!-- EMAIL -->
     <input type="email" id="email" placeholder="Il tuo indirizzo email">
 
-    <!-- PASSWORD -->
     <div class="password-wrapper">
         <input type="password" id="password" placeholder="La tua password">
         <span class="togglePassword" id="togglePassword">👁️</span>
     </div>
 
-    <!-- MEMORIZZA -->
     <div class="rememberBox">
         <input type="checkbox" id="remember">
         <label for="remember">Memorizza dati di accesso</label>
@@ -168,32 +158,14 @@ function applyTheme(company) {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-    const companySelect = document.getElementById("company");
-    const emailInput = document.getElementById("email");
-    const passwordInput = document.getElementById("password");
-    const remember = document.getElementById("remember");
-    const loginBtn = document.getElementById("login");
     const togglePassword = document.getElementById("togglePassword");
+    const passwordInput = document.getElementById("password");
 
-    applyTheme(companySelect.value);
+    applyTheme(document.getElementById("company").value);
 
     togglePassword.addEventListener("click", () => {
-        if (passwordInput.type === "password") {
-            passwordInput.type = "text";
-            togglePassword.textContent = "🙈";
-        } else {
-            passwordInput.type = "password";
-            togglePassword.textContent = "👁️";
-        }
-    });
-
-    loginBtn.addEventListener("click", () => {
-        if (!emailInput.value || !passwordInput.value) {
-            alert("Compila email e password");
-            return;
-        }
-        localStorage.setItem("user", emailInput.value);
-        location.href = "portal.html";
+        passwordInput.type =
+            passwordInput.type === "password" ? "text" : "password";
     });
 });
 </script>
