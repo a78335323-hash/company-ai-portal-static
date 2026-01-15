@@ -23,6 +23,9 @@ body {
     box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     text-align: center;
     position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 #logo {
@@ -32,7 +35,6 @@ body {
     width: 90px;
 }
 
-/* INPUT UNIFORMI */
 select, input {
     width: 100%;
     padding: 14px;
@@ -44,47 +46,6 @@ select, input {
     box-sizing: border-box;
 }
 
-/* PASSWORD */
-.password-wrapper {
-    position: relative;
-    width: 100%;
-}
-
-.password-wrapper input {
-    padding-right: 50px; /* spazio per l'occhio */
-}
-
-.togglePassword {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 30px;
-    height: 30px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    background: white;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    color: #555;
-    user-select: none;
-}
-
-/* REMEMBER */
-.rememberBox {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 18px;
-    font-size: 13px;
-    white-space: nowrap; /* 🔥 FORZA UNA SOLA RIGA */
-}
-
-/* BUTTON */
 button {
     width: 55%;
     padding: 12px;
@@ -93,14 +54,48 @@ button {
     color: white;
     font-size: 16px;
     cursor: pointer;
+    margin-top: 10px;
 }
 
-/* FORGOT */
 .forgot {
     font-size: 12px;
     color: #2980b9;
     cursor: pointer;
     margin-bottom: 20px;
+    text-align: center;
+}
+
+.rememberBox {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 18px;
+    font-size: 13px;
+}
+
+.password-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.togglePassword {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 18px;
+    color: #555;
+    user-select: none;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: white;
 }
 </style>
 </head>
@@ -121,10 +116,10 @@ button {
     <!-- EMAIL -->
     <input type="email" id="email" placeholder="Il tuo indirizzo email">
 
-    <!-- PASSWORD -->
+    <!-- PASSWORD CON OCCHIO -->
     <div class="password-wrapper">
         <input type="password" id="password" placeholder="La tua password">
-        <div class="togglePassword" id="togglePassword">👁️</div>
+        <span class="togglePassword" id="togglePassword">👁️</span>
     </div>
 
     <!-- MEMORIZZA -->
@@ -166,21 +161,25 @@ window.addEventListener("DOMContentLoaded", () => {
     const loginBtn = document.getElementById("login");
     const togglePassword = document.getElementById("togglePassword");
 
+    // ripristino azienda
     const savedCompany = localStorage.getItem("company") || "Lucagri";
     companySelect.value = savedCompany;
     applyTheme(savedCompany);
 
+    // ripristino credenziali se salvate
     if (localStorage.getItem("remember") === "true") {
         remember.checked = true;
         emailInput.value = localStorage.getItem("savedEmail") || "";
         passwordInput.value = localStorage.getItem("savedPassword") || "";
     }
 
+    // cambio tema al cambio azienda
     companySelect.addEventListener("change", () => {
         localStorage.setItem("company", companySelect.value);
         applyTheme(companySelect.value);
     });
 
+    // mostra / nascondi password con icona occhio
     togglePassword.addEventListener("click", () => {
         if (passwordInput.type === "password") {
             passwordInput.type = "text";
@@ -191,6 +190,7 @@ window.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // login
     loginBtn.addEventListener("click", () => {
         if (!emailInput.value) {
             alert("Inserisci l'email");
@@ -201,8 +201,10 @@ window.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+        // salva azienda sempre
         localStorage.setItem("company", companySelect.value);
 
+        // memorizza credenziali solo se spuntato
         if (remember.checked) {
             localStorage.setItem("remember", "true");
             localStorage.setItem("savedEmail", emailInput.value);
@@ -213,7 +215,9 @@ window.addEventListener("DOMContentLoaded", () => {
             localStorage.removeItem("savedPassword");
         }
 
+        // usa email come identificativo utente
         localStorage.setItem("user", emailInput.value);
+
         location.href = "portal.html";
     });
 });
