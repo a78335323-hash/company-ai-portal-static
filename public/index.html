@@ -224,8 +224,8 @@ window.addEventListener("DOMContentLoaded", () => {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                     email: emailInput.value,
-                     password: passwordInput.value
+                     email,
+                     password,
                     company: companySelect.value
                 })
             });
