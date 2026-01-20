@@ -4,12 +4,12 @@ import jwt from "jsonwebtoken";
 const USERS = [
   {
     email: "luca@lucagri.it",
-    passwordHash: "$2a$10$INSERISCI_HASH",
+    passwordHash: "$2a$10$N9qo8uLOickgx2ZMRZo5e.e1zjv9Gz4H6Cw1n8F0cY7Z0C7x5tG3m",
     company: "Lucagri"
   },
   {
     email: "mattia@agrichampion.it",
-    passwordHash: "$2a$10$INSERISCI_HASH",
+    passwordHash: "$2a$10$7EqJtq98hPqEX7fNZaFWo.8vG1pX9rQnqz9s9O4E3j5zK7dF9yF2i",
     company: "Agrichampion"
   }
 ];
