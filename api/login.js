@@ -16,12 +16,27 @@ const USERS = [
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+    return res.status(405).json({ error: "Metodo non consentito" });
   }
 
-  const { email, password } = req.body || {};
+  let body = "";
 
-  const user = USERS.find(u => u.email === email);
+  try {
+    body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+  } catch (e) {
+    return res.status(400).json({ error: "Body non valido" });
+  }
+
+  const { email, password } = body || {};
+
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email e password obbligatorie" });
+  }
+
+  const user = USERS.find(
+    u => u.email.toLowerCase() === email.toLowerCase()
+  );
+
   if (!user) {
     return res.status(401).json({ error: "Email o password non corretti" });
   }
@@ -37,5 +52,8 @@ export default async function handler(req, res) {
     { expiresIn: "8h" }
   );
 
-  res.status(200).json({ token, company: user.company });
+  return res.status(200).json({
+    token,
+    company: user.company
+  });
 }
