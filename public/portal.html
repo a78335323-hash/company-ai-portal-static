@@ -105,6 +105,13 @@ textarea { flex:1; resize:none; padding:14px; border-radius:12px; border:1px sol
 /* ===============================
    INIZIALIZZAZIONE
 =================================*/
+/* BLOCCO ACCESSO SENZA LOGIN */
+const token = localStorage.getItem("token");
+const user = localStorage.getItem("user");
+
+if (!token || !user) {
+  window.location.href = "index.html";
+}
 const user = localStorage.getItem("user") || "Utente";
 const company = localStorage.getItem("company") || "Lucagri";
 
