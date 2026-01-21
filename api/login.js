@@ -1,5 +1,5 @@
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const USERS = [
   {
@@ -14,45 +14,45 @@ const USERS = [
   }
 ];
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  let body = "";
+  try {
+    const { email, password, companySelected } = req.body || {};
 
-  await new Promise((resolve, reject) => {
-    req.on("data", chunk => {
-      body += chunk;
-    });
-    req.on("end", resolve);
-    req.on("error", reject);
-  });
+    if (!email || !password) {
+      return res.status(400).json({ error: "Credenziali mancanti" });
+    }
 
-  const { email, password } = JSON.parse(body || "{}");
+    const user = USERS.find(u => u.email === email);
+    if (!user) {
+      return res.status(401).json({ error: "Email o password non corretti" });
+    }
 
-  if (!email || !password) {
-    return res.status(400).json({ error: "Missing credentials" });
+    // blocco: un utente non può entrare nell'altra azienda
+    if (companySelected && companySelected !== user.company) {
+      return res.status(401).json({ error: "Utente non autorizzato per questa azienda" });
+    }
+
+    const ok = await bcrypt.compare(password, user.passwordHash);
+    if (!ok) {
+      return res.status(401).json({ error: "Email o password non corretti" });
+    }
+
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({ error: "JWT_SECRET non configurata su Vercel" });
+    }
+
+    const token = jwt.sign(
+      { email: user.email, company: user.company },
+      process.env.JWT_SECRET,
+      { expiresIn: "8h" }
+    );
+
+    return res.status(200).json({ token, company: user.company });
+  } catch (err) {
+    return res.status(500).json({ error: "Errore server", details: String(err) });
   }
-
-  const user = USERS.find(u => u.email === email);
-  if (!user) {
-    return res.status(401).json({ error: "Email o password non corretti" });
-  }
-
-  const ok = await bcrypt.compare(password, user.passwordHash);
-  if (!ok) {
-    return res.status(401).json({ error: "Email o password non corretti" });
-  }
-
-  const token = jwt.sign(
-    { email: user.email, company: user.company },
-    process.env.JWT_SECRET,
-    { expiresIn: "8h" }
-  );
-
-  return res.status(200).json({
-    token,
-    company: user.company
-  });
-}
+};
