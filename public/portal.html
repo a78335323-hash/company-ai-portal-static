@@ -113,6 +113,41 @@ if (!token || !storedUser) {
 
 const user = storedUser || "Utente";
 const company = localStorage.getItem("company") || "Lucagri";
+/* ===============================
+   PROMEMORIA: STORAGE PER UTENTE+AZIENDA
+=================================*/
+function remindersKey() {
+  return `reminders:${company}:${user}`;
+}
+
+function loadReminders() {
+  try {
+    return JSON.parse(localStorage.getItem(remindersKey()) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function saveReminders(list) {
+  localStorage.setItem(remindersKey(), JSON.stringify(list));
+}
+
+function addReminder(item) {
+  const list = loadReminders();
+  list.unshift(item);
+  saveReminders(list);
+}
+
+function updateReminder(id, patch) {
+  const list = loadReminders().map(r => (r.id === id ? { ...r, ...patch } : r));
+  saveReminders(list);
+}
+
+function deleteReminder(id) {
+  const list = loadReminders().filter(r => r.id !== id);
+  saveReminders(list);
+}
+
 
 /* ===============================
    INIZIALIZZAZIONE
@@ -334,16 +369,17 @@ sendBtn.onclick = async ()=>{
   if(!msg.value.trim()) return;
   const text = msg.value; msg.value="";
 
-  // PROMEMORIA via chat: "ricordami ..."
-  const created = tryCreateReminderFromChat(text);
+    const created = tryCreateReminderFromChat(text);
   if (created) {
     userMsg(text); chatHistory.push({ role:"user", content:text });
+
     ai(`✅ Promemoria creato: "${escapeHtml(created.text)}" (${formatShort(created.dueAt)})`);
     chatHistory.push({ role:"assistant", content:`Promemoria creato: ${created.text}` });
 
     if (chat.innerHTML.includes("<h3>Promemoria</h3>")) showPromemoria();
     return;
   }
+
 
   userMsg(text); chatHistory.push({role:"user",content:text});
   const loadId = Date.now();
@@ -493,6 +529,86 @@ function showPromemoria(){
 }
 
 function showTelefonate(){ chat.innerHTML=`<div style="font-size:17px;line-height:1.7"><h3>Telefonate</h3><h4>✔️ Interessati</h4><table border="1" cellpadding="6" style="border-collapse:collapse;width:100%"><tr><th>Nome</th><th>Numero</th><th>Data chiamata</th></tr><tr><td>Mario Rossi</td><td>3331234567</td><td>05/01/2026</td></tr><tr><td>Lucia Bianchi</td><td>3499876543</td><td>07/01/2026</td></tr></table><br><h4>📧 Da reinviare email</h4><table border="1" cellpadding="6" style="border-collapse:collapse;width:100%"><tr><th>Nome</th><th>Email</th><th>Data chiamata</th></tr><tr><td>Paolo Verdi</td><td>paolo@example.com</td><td>06/01/2026</td></tr><tr><td>Anna Blu</td><td>anna@example.com</td><td>08/01/2026</td></tr></table></div>`; inputBox.style.display="none"; }
+function escapeHtml(str){
+  return String(str)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+function formatShort(ts){
+  const d = new Date(ts);
+  const dd = String(d.getDate()).padStart(2,"0");
+  const mm = String(d.getMonth()+1).padStart(2,"0");
+  const yyyy = d.getFullYear();
+  const hh = String(d.getHours()).padStart(2,"0");
+  const mi = String(d.getMinutes()).padStart(2,"0");
+  return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
+}
+
+function tryCreateReminderFromChat(textRaw){
+  const text = (textRaw || "").trim();
+  const low = text.toLowerCase();
+
+  if (!low.startsWith("ricordami")) return null;
+
+  let rest = text.slice("ricordami".length).trim();
+
+  let dueAt = null;
+  const now = new Date();
+  const baseToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0, 0, 0);
+
+  if (rest.toLowerCase().startsWith("oggi")) {
+    dueAt = baseToday.getTime();
+    rest = rest.slice(4).trim();
+  } else if (rest.toLowerCase().startsWith("domani")) {
+    const d = new Date(baseToday);
+    d.setDate(d.getDate()+1);
+    dueAt = d.getTime();
+    rest = rest.slice(6).trim();
+  } else {
+    const m = rest.match(/^(il\s+)?(\d{1,2})\/(\d{1,2})(\/(\d{4}))?/i);
+    if (m) {
+      const dd = parseInt(m[2],10);
+      const mm = parseInt(m[3],10) - 1;
+      const yyyy = m[5] ? parseInt(m[5],10) : now.getFullYear();
+      const d = new Date(yyyy, mm, dd, 9, 0, 0, 0);
+      dueAt = d.getTime();
+      rest = rest.slice(m[0].length).trim();
+    }
+  }
+
+  const t = rest.match(/^(alle\s+)?(\d{1,2}):(\d{2})/i);
+  if (t) {
+    const hh = Math.min(23, Math.max(0, parseInt(t[2],10)));
+    const mi = Math.min(59, Math.max(0, parseInt(t[3],10)));
+    const d = dueAt ? new Date(dueAt) : new Date(baseToday);
+    d.setHours(hh, mi, 0, 0);
+    dueAt = d.getTime();
+    rest = rest.slice(t[0].length).trim();
+  }
+
+  rest = rest.replace(/^di\s+/i, "").trim();
+  if (!rest) return null;
+
+  if (!dueAt) dueAt = baseToday.getTime();
+
+  const item = {
+    id: `r_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+    text: rest,
+    dueAt,
+    createdAt: Date.now(),
+    done: false,
+    doneAt: null,
+    source: "chat"
+  };
+
+  addReminder(item);
+  return item;
+}
+
 </script>
 
 </body>
