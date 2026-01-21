@@ -233,6 +233,8 @@ window.addEventListener("DOMContentLoaded", () => {
             if (!res.ok) throw new Error("Credenziali errate");
 
             const data = await res.json();
+            localStorage.setItem("company", data.company);
+
 
             if (remember.checked) {
                 localStorage.setItem("remember", "true");
