@@ -224,9 +224,8 @@ window.addEventListener("DOMContentLoaded", () => {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                     email,
-                     password,
-                    company: companySelect.value
+                    email: email,
+                    password: password
                 })
             });
 
@@ -239,7 +238,9 @@ window.addEventListener("DOMContentLoaded", () => {
                 localStorage.setItem("savedEmail", email);
                 localStorage.setItem("savedPassword", password);
             } else {
-                localStorage.clear();
+                localStorage.removeItem("remember");
+                localStorage.removeItem("savedEmail");
+                localStorage.removeItem("savedPassword");
             }
 
             localStorage.setItem("user", email);
