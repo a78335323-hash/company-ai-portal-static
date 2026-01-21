@@ -65,7 +65,6 @@ textarea { flex:1; resize:none; padding:14px; border-radius:12px; border:1px sol
 
 <body>
 
-<!-- PULSANTI SALVA / DOWNLOAD -->
 <div class="top-buttons">
   <button id="saveBtn">Salva chat</button>
   <button id="downloadBtn">Scarica .txt</button>
@@ -103,18 +102,21 @@ textarea { flex:1; resize:none; padding:14px; border-radius:12px; border:1px sol
 
 <script>
 /* ===============================
-   INIZIALIZZAZIONE
+   BLOCCO ACCESSO SENZA LOGIN
 =================================*/
-/* BLOCCO ACCESSO SENZA LOGIN */
 const token = localStorage.getItem("token");
-const user = localStorage.getItem("user");
+const storedUser = localStorage.getItem("user");
 
-if (!token || !user) {
-  window.location.href = "index.html";
+if (!token || !storedUser) {
+  window.location.replace("index.html");
 }
-const user = localStorage.getItem("user") || "Utente";
+
+const user = storedUser || "Utente";
 const company = localStorage.getItem("company") || "Lucagri";
 
+/* ===============================
+   INIZIALIZZAZIONE
+=================================*/
 const avatar = document.getElementById("avatar");
 const profileName = document.getElementById("profileName");
 const sidebar = document.getElementById("sidebar");
@@ -140,6 +142,7 @@ const companyData = {
  Agrichampion:{sidebar:"linear-gradient(180deg,#ffdba8,#f39c12)",send:"#f39c12",logo:"logo2.png",link:"https://agrichampion.com/"},
  Cabreganze:{sidebar:"linear-gradient(180deg,#f6e6a8,#d4af37)",send:"#d4af37",logo:"logo3.jpg",link:"https://www.cabreganze.com/"}
 };
+
 const theme = companyData[company] || companyData.Lucagri;
 sidebar.style.background = theme.sidebar;
 sendBtn.style.background = theme.send;
@@ -222,6 +225,7 @@ sendBtn.onclick = async ()=>{
     else box.innerHTML=`<span>Errore AI: ${data.error}</span>`;
   }catch(err){ document.getElementById(`ai_${loadId}`).innerHTML=`<span>Errore connessione server</span>`; }
 };
+
 msg.addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); sendBtn.click(); } });
 
 /* ===============================
@@ -248,7 +252,12 @@ function askSave(callback){ if(chatModified && chatHistory.length>0){ if(confirm
 document.getElementById("newChatBtn").onclick = ()=>askSave(()=>{ chatHistory=[]; chat.innerHTML=""; ai("Come posso aiutarti?"); inputBox.style.display="flex"; });
 document.getElementById("promemoriaBtn").onclick = ()=>askSave(showPromemoria);
 document.getElementById("telefonateBtn").onclick = ()=>askSave(showTelefonate);
-document.getElementById("changeUserBtn").onclick = ()=>askSave(()=>{ location.href='index.html'; });
+
+document.getElementById("changeUserBtn").onclick = ()=>askSave(()=>{
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  window.location.href = "index.html";
+});
 
 window.addEventListener("beforeunload",(e)=>{ if(chatModified && chatHistory.length>0){ e.preventDefault(); e.returnValue="La chat ha modifiche non salvate, vuoi salvare?"; } });
 
@@ -271,7 +280,7 @@ downloadBtn.onclick = downloadChat;
 =================================*/
 function showPromemoria(){ chat.innerHTML=`<div style="font-size:17px;line-height:1.7"><h3>Promemoria</h3><p>Chiamare cliente</p><p>Inviare fattura</p><p>Controllare ordini</p><p>📞 Richiamare interessati</p><p>📧 Reinviare email</p></div>`; inputBox.style.display="none"; }
 function showTelefonate(){ chat.innerHTML=`<div style="font-size:17px;line-height:1.7"><h3>Telefonate</h3><h4>✔️ Interessati</h4><table border="1" cellpadding="6" style="border-collapse:collapse;width:100%"><tr><th>Nome</th><th>Numero</th><th>Data chiamata</th></tr><tr><td>Mario Rossi</td><td>3331234567</td><td>05/01/2026</td></tr><tr><td>Lucia Bianchi</td><td>3499876543</td><td>07/01/2026</td></tr></table><br><h4>📧 Da reinviare email</h4><table border="1" cellpadding="6" style="border-collapse:collapse;width:100%"><tr><th>Nome</th><th>Email</th><th>Data chiamata</th></tr><tr><td>Paolo Verdi</td><td>paolo@example.com</td><td>06/01/2026</td></tr><tr><td>Anna Blu</td><td>anna@example.com</td><td>08/01/2026</td></tr></table></div>`; inputBox.style.display="none"; }
-
 </script>
+
 </body>
 </html>
