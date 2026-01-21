@@ -16,27 +16,26 @@ const USERS = [
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Metodo non consentito" });
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
   let body = "";
 
-  try {
-    body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-  } catch (e) {
-    return res.status(400).json({ error: "Body non valido" });
-  }
+  await new Promise((resolve, reject) => {
+    req.on("data", chunk => {
+      body += chunk;
+    });
+    req.on("end", resolve);
+    req.on("error", reject);
+  });
 
-  const { email, password } = body || {};
+  const { email, password } = JSON.parse(body || "{}");
 
   if (!email || !password) {
-    return res.status(400).json({ error: "Email e password obbligatorie" });
+    return res.status(400).json({ error: "Missing credentials" });
   }
 
-  const user = USERS.find(
-    u => u.email.toLowerCase() === email.toLowerCase()
-  );
-
+  const user = USERS.find(u => u.email === email);
   if (!user) {
     return res.status(401).json({ error: "Email o password non corretti" });
   }
