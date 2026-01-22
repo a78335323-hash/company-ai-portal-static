@@ -56,11 +56,6 @@ textarea { flex:1; resize:none; padding:14px; border-radius:12px; border:1px sol
 /* MICROFONO */
 .mic-btn { margin-right:10px; padding:0; width:44px; height:44px; border-radius:50%; border:none; background:#4285f4; color:white; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
 
-/* PULSANTI SALVA / DOWNLOAD FUORI SIDEBAR */
-.top-buttons { position:absolute; top:10px; left:10px; z-index:999; display:flex; flex-direction:column; gap:6px; }
-.top-buttons button { padding:8px 12px; border-radius:6px; border:1px solid #ccc; background:#fff; color:#333; cursor:pointer; }
-.top-buttons button:hover { background:#eee; }
-
 .side-actions{
   display:flex;
   gap:8px;
@@ -108,7 +103,7 @@ textarea { flex:1; resize:none; padding:14px; border-radius:12px; border:1px sol
 </div>
 
 <div class="main">
-  <a id="logoLink" target="_blank"><img id="logo"></a>
+  <a id="logoLink" target="_blank"><img id="logo" alt="logo"></a>
   <div class="container">
     <div class="chat" id="chat"></div>
     <div class="input" id="inputBox">
@@ -119,7 +114,7 @@ textarea { flex:1; resize:none; padding:14px; border-radius:12px; border:1px sol
   </div>
 </div>
 
-<!-- Supabase (UNA SOLA VOLTA, fuori dallo script principale) -->
+<!-- Supabase (UNA SOLA VOLTA) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
@@ -131,12 +126,17 @@ const SUPABASE_KEY = "sb_publishable_08Xb3z6ASnEn9dl84UG4_Q_L_4gHqfw";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* ===============================
-   BLOCCO LOGIN
+   BLOCCO LOGIN (ROBUSTO)
 ================================= */
 const token = localStorage.getItem("token");
 const user = localStorage.getItem("user");
-const company = localStorage.getItem("company") || "Lucagri";
-if (!token || !user) location.href = "index.html";
+const company = localStorage.getItem("company");
+
+// Se manca qualcosa => torna al login
+if (!token || !user || !company) {
+  window.location.replace("index.html");
+  throw new Error("Missing token/user/company in localStorage");
+}
 
 /* ===============================
    DOM
@@ -152,16 +152,18 @@ const saveBtn = document.getElementById("saveBtn");
 const downloadBtn = document.getElementById("downloadBtn");
 const chatList = document.getElementById("chatList");
 const micBtn = document.getElementById("mic");
+const logo = document.getElementById("logo");
+const logoLink = document.getElementById("logoLink");
 
+/* ===============================
+   PROFILO
+================================= */
 avatar.textContent = user.slice(0,2).toUpperCase();
 profileName.textContent = user;
 
 /* ===============================
    THEME + LOGO
 ================================= */
-const logo = document.getElementById("logo");
-const logoLink = document.getElementById("logoLink");
-
 const companyDataFull = {
   Lucagri: {
     sidebar: "linear-gradient(180deg,#7de3a2,#2ecc71)",
@@ -209,8 +211,16 @@ function escapeHtml(s){
   }[m]));
 }
 
-function formatShort(ts){
+function toMs(ts){
+  // accetta: number, ISO string, Date
+  if (ts instanceof Date) return ts.getTime();
+  if (typeof ts === "number") return ts;
   const d = new Date(ts);
+  return isNaN(d.getTime()) ? Date.now() : d.getTime();
+}
+
+function formatShort(ts){
+  const d = new Date(toMs(ts));
   const dd = String(d.getDate()).padStart(2,"0");
   const mm = String(d.getMonth()+1).padStart(2,"0");
   const yyyy = d.getFullYear();
@@ -219,6 +229,9 @@ function formatShort(ts){
   return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
 }
 
+/* ===============================
+   PARSER "RICORDAMI ..."
+================================= */
 function parseReminder(textRaw){
   const text = (textRaw || "").trim();
   const low = text.toLowerCase();
@@ -272,20 +285,20 @@ function parseReminder(textRaw){
 ================================= */
 async function hasRemindersToday(){
   const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1).toISOString();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1);
 
   const { data, error } = await supabaseClient
     .from("reminders")
     .select("id")
     .eq("user_email", user)
     .eq("company", company)
-    .gte("due_at", start)
-    .lt("due_at", end)
+    .gte("due_at", start.toISOString())
+    .lt("due_at", end.toISOString())
     .limit(1);
 
   if (error) return false;
-  return (data && data.length > 0);
+  return !!(data && data.length);
 }
 
 async function createReminderInDb(text, dueAtMs){
@@ -351,7 +364,7 @@ function showTelefonate(){
    INVIO MESSAGGI (CHAT + PROMEMORIA)
 ================================= */
 async function handleSend() {
-  // 🔒 Blocco invio se input non visibile (Promemoria / Telefonate)
+  // 🔒 Se non sei nella chat (input nascosto) non inviare
   if (!inputBox || inputBox.style.display === "none") return;
 
   if (!msg.value.trim()) return;
@@ -359,17 +372,16 @@ async function handleSend() {
   const text = msg.value.trim();
   msg.value = "";
 
-  // ✅ Mostra subito il messaggio utente
+  // mostra subito il messaggio utente
   userMsg(text);
 
-  // 1) Se è un "ricordami ..." crea promemoria su Supabase
+  // 1) "ricordami" => promemoria su Supabase
   const parsed = parseReminder(text);
   if (parsed) {
     const ok = await createReminderInDb(parsed.text, parsed.dueAt);
-
     if (ok) {
       ai(`✅ Promemoria creato: "${parsed.text}" (${formatShort(parsed.dueAt)})`);
-      await showPromemoria(); // ricarica vista promemoria
+      await showPromemoria();
     } else {
       ai("❌ Errore: non sono riuscito a salvare il promemoria su Supabase");
       inputBox.style.display = "flex";
@@ -377,7 +389,7 @@ async function handleSend() {
     return;
   }
 
-  // 2) Altrimenti: chat normale con AI
+  // 2) chat normale con AI
   chatHistory.push({ role: "user", content: text });
 
   const id = Date.now();
@@ -385,53 +397,28 @@ async function handleSend() {
   chat.scrollTop = chat.scrollHeight;
 
   try {
-    const r = await fetch("https://company-ai-portal-static.onrender.com/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ history: chatHistory })
-    });
-
-    const d = await r.json();
-    const reply = d?.reply || "Errore";
-
-    const box = document.getElementById(`ai_${id}`);
-    if (box) box.innerHTML = `<span>${escapeHtml(reply)}</span>`;
-
-    chatHistory.push({ role: "assistant", content: reply });
-  } catch (e) {
-    const box = document.getElementById(`ai_${id}`);
-    if (box) box.innerHTML = `<span>Errore connessione</span>`;
-  }
-}
-
-
-  // 2) Chat normale con AI
-  userMsg(text);
-  chatHistory.push({role:"user",content:text});
-
-  const id = Date.now();
-  chat.innerHTML += `<div class="msg-ai" id="ai_${id}"><span>Sto pensando...</span></div>`;
-  chat.scrollTop = chat.scrollHeight;
-
-  try{
     const r = await fetch("https://company-ai-portal-static.onrender.com/chat",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({history:chatHistory})
     });
     const d = await r.json();
-    document.getElementById(`ai_${id}`).innerHTML =
-      `<span>${escapeHtml(d.reply||"Errore")}</span>`;
-    chatHistory.push({role:"assistant",content:d.reply || "Errore"});
+    const reply = d?.reply || "Errore";
+
+    const box = document.getElementById(`ai_${id}`);
+    if (box) box.innerHTML = `<span>${escapeHtml(reply)}</span>`;
+
+    chatHistory.push({ role:"assistant", content: reply });
     chatModified = true;
-  }catch{
-    document.getElementById(`ai_${id}`).innerHTML = `<span>Errore connessione</span>`;
+  } catch (e) {
+    const box = document.getElementById(`ai_${id}`);
+    if (box) box.innerHTML = `<span>Errore connessione</span>`;
   }
 }
 
 sendBtn.onclick = handleSend;
 
-// INVIO da tastiera (Enter = invia, Shift+Enter = a capo)
+// Enter = invia, Shift+Enter = a capo
 msg.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
@@ -456,14 +443,19 @@ chat.addEventListener("click", async (e) => {
 /* ===============================
    SALVA / DOWNLOAD CHAT
 ================================= */
+function savedChatsKey(){
+  // così non si mischiano tra aziende/utenti
+  return `savedChats:${company}:${user}`;
+}
+
 function saveChat(){
   if(chatHistory.length===0){ alert("Niente da salvare"); return; }
   let name = prompt("Nome della chat","");
   if(!name) return;
 
-  let savedChats = JSON.parse(localStorage.getItem("savedChats")||"[]");
+  let savedChats = JSON.parse(localStorage.getItem(savedChatsKey())||"[]");
   savedChats.push({name:name,history:chatHistory});
-  localStorage.setItem("savedChats",JSON.stringify(savedChats));
+  localStorage.setItem(savedChatsKey(),JSON.stringify(savedChats));
   addChatToList(name);
 
   chatHistory=[]; chat.innerHTML=""; ai("Come posso aiutarti?");
@@ -480,19 +472,20 @@ function addChatToList(name){
   deleteBtn.onclick = (ev)=>{
     ev.stopPropagation();
     if(confirm("Sei sicuro di voler eliminare questa chat?")){
-      let savedChats = JSON.parse(localStorage.getItem("savedChats")||"[]");
+      let savedChats = JSON.parse(localStorage.getItem(savedChatsKey())||"[]");
       savedChats = savedChats.filter(c=>c.name!==name);
-      localStorage.setItem("savedChats",JSON.stringify(savedChats));
+      localStorage.setItem(savedChatsKey(),JSON.stringify(savedChats));
       div.remove();
     }
   };
 
   div.onclick = ()=>{
     if(chatModified && chatHistory.length>0 && !confirm("Ci sono modifiche non salvate, procedere?")) return;
-    const savedChats = JSON.parse(localStorage.getItem("savedChats")||"[]");
+    const savedChats = JSON.parse(localStorage.getItem(savedChatsKey())||"[]");
     const c = savedChats.find(c=>c.name===name);
     if(c){
-      chat.innerHTML=""; chatHistory=c.history;
+      chat.innerHTML="";
+      chatHistory = c.history || [];
       chatHistory.forEach(m=>{ if(m.role==='user') userMsg(m.content); else ai(m.content); });
       chatModified=false;
       inputBox.style.display="flex";
@@ -503,7 +496,7 @@ function addChatToList(name){
 }
 
 function loadSavedChatsList(){
-  const savedChats = JSON.parse(localStorage.getItem("savedChats")||"[]");
+  const savedChats = JSON.parse(localStorage.getItem(savedChatsKey())||"[]");
   chatList.innerHTML = "";
   savedChats.forEach(c=>addChatToList(c.name));
 }
@@ -544,7 +537,7 @@ document.getElementById("telefonateBtn").onclick = ()=>askSave(showTelefonate);
 document.getElementById("changeUserBtn").onclick = ()=>askSave(()=>{
   localStorage.removeItem("token");
   localStorage.removeItem("user");
-  // NON faccio clear() così non butti via savedChats
+  localStorage.removeItem("company");
   location.href="index.html";
 });
 
@@ -587,7 +580,7 @@ if('webkitSpeechRecognition' in window){
 (async function init(){
   loadSavedChatsList();
 
-  // Vista automatica: se hai promemoria per oggi => apri Promemoria, altrimenti chat normale
+  // vista automatica: se hai promemoria oggi => apri promemoria, altrimenti chat
   const today = await hasRemindersToday();
   if (today) {
     await showPromemoria();
