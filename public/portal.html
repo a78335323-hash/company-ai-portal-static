@@ -462,6 +462,47 @@ function showPromemoria(){
     else dueFuture.push(r);
   }
 
+  chat.innerHTML = `
+    <div style="font-size:16px;line-height:1.6">
+      <h3>Promemoria</h3>
+
+      <button id="genCallsBtn"
+        style="margin-bottom:12px;padding:8px 12px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer">
+        Genera chiamate di oggi (demo)
+      </button>
+
+      <h4>📅 Oggi</h4>
+      ${dueToday.length ? dueToday.map(r => reminderRow(r)).join("") : "<p>Nessun promemoria oggi</p>"}
+
+      <h4>⏳ Prossimi</h4>
+      ${dueFuture.length ? dueFuture.map(r => reminderRow(r)).join("") : "<p>Nessun promemoria futuro</p>"}
+
+      <h4>✅ Completati</h4>
+      ${done.length ? done.map(r => reminderRow(r, true)).join("") : "<p>Nessun promemoria completato</p>"}
+    </div>
+  `;
+
+  inputBox.style.display = "none";
+
+  // collega il bottone "Genera chiamate"
+const btn = document.getElementById("genCallsBtn");
+if (btn) {
+  btn.onclick = () => {
+    generateTodayCallRemindersDemo();
+    showPromemoria(); // ricarica la lista
+  };
+}
+  // 👉 COLLEGAMENTO BOTTONE
+  const btn = document.getElementById("genCallsBtn");
+  if (btn) {
+    btn.onclick = () => {
+      generateTodayCallRemindersDemo();
+      showPromemoria(); // refresh vista
+    };
+  }
+}
+
+
   function row(r){
     const when = r.dueAt ? ` <span style="opacity:.75;font-size:12px">(${formatShort(r.dueAt)})</span>` : "";
     return `
@@ -481,6 +522,10 @@ function showPromemoria(){
   chat.innerHTML = `
     <div style="font-size:17px;line-height:1.7">
       <h3>Promemoria</h3>
+      <button id="genCallsBtn" style="margin-bottom:12px;padding:8px 12px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer">
+  Genera chiamate di oggi (demo)
+</button>
+
       <p style="margin-top:-8px;opacity:.8">
         Scrivi in chat: <b>“ricordami ...”</b> per crearne uno.<br>
         Esempi: <i>“ricordami domani di chiamare Mario”</i> – <i>“ricordami il 25/01/2026 alle 16:30 di mandare deplan a Marco”</i>
