@@ -78,22 +78,20 @@ textarea { flex:1; resize:none; padding:14px; border-radius:12px; border:1px sol
 .side-actions button:hover{
   background: rgba(255,255,255,0.28);
 }
-
 </style>
 </head>
 
 <body>
 
-
 <div class="sidebar" id="sidebar">
   <div>
     <div class="sidebar-btn" id="newChatBtn">Nuova chat</div>
-    
+
     <div class="side-actions">
-    <button id="saveBtn">Salva chat</button>
-    <button id="downloadBtn">Scarica .txt</button>
+      <button id="saveBtn">Salva chat</button>
+      <button id="downloadBtn">Scarica .txt</button>
     </div>
-    
+
     <div class="sidebar-btn search-wrapper">
       <input id="search" placeholder="Cerca chat">
     </div>
@@ -120,14 +118,24 @@ textarea { flex:1; resize:none; padding:14px; border-radius:12px; border:1px sol
     </div>
   </div>
 </div>
+
+<!-- Supabase (UNA SOLA VOLTA, fuori dallo script principale) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
+/* ===============================
+   SUPABASE CONFIG
+================================= */
+const SUPABASE_URL = "https://yjpqmevwzoqdtkahxdej.supabase.co";
+const SUPABASE_KEY = "sb_publishable_08Xb3z6ASnEn9dl84UG4_Q_L_4gHqfw";
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 /* ===============================
    BLOCCO LOGIN
 ================================= */
 const token = localStorage.getItem("token");
 const user = localStorage.getItem("user");
 const company = localStorage.getItem("company") || "Lucagri";
-
 if (!token || !user) location.href = "index.html";
 
 /* ===============================
@@ -143,126 +151,232 @@ const inputBox = document.getElementById("inputBox");
 const saveBtn = document.getElementById("saveBtn");
 const downloadBtn = document.getElementById("downloadBtn");
 const chatList = document.getElementById("chatList");
+const micBtn = document.getElementById("mic");
 
 avatar.textContent = user.slice(0,2).toUpperCase();
 profileName.textContent = user;
 
 /* ===============================
-   THEME
+   THEME + LOGO
 ================================= */
 const logo = document.getElementById("logo");
 const logoLink = document.getElementById("logoLink");
 
 const companyDataFull = {
   Lucagri: {
-    sidebar: "#2ecc71",
+    sidebar: "linear-gradient(180deg,#7de3a2,#2ecc71)",
+    send: "#2ecc71",
     logo: "logo.png",
     link: "https://www.lucagri.it/"
   },
   Agrichampion: {
-    sidebar: "#f39c12",
+    sidebar: "linear-gradient(180deg,#ffdba8,#f39c12)",
+    send: "#f39c12",
     logo: "logo2.png",
     link: "https://agrichampion.com/"
   }
 };
 
 const theme = companyDataFull[company] || companyDataFull.Lucagri;
-
 sidebar.style.background = theme.sidebar;
+sendBtn.style.background = theme.send;
 logo.src = theme.logo;
 logoLink.href = theme.link;
-
 
 /* ===============================
    CHAT CORE
 ================================= */
 let chatHistory = [];
+let chatModified = false;
 
 function ai(t){
   chat.innerHTML += `<div class="msg-ai"><span>${escapeHtml(t)}</span></div>`;
   chat.scrollTop = chat.scrollHeight;
+  chatModified = true;
 }
 function userMsg(t){
   chat.innerHTML += `<div class="msg-user"><span>${escapeHtml(t)}</span></div>`;
   chat.scrollTop = chat.scrollHeight;
+  chatModified = true;
 }
 
 /* ===============================
-   PROMEMORIA STORAGE
+   HELPERS
 ================================= */
-const REM_KEY = `reminders:${company}:${user}`;
-const loadReminders = ()=>JSON.parse(localStorage.getItem(REM_KEY)||"[]");
-const saveReminders = l=>localStorage.setItem(REM_KEY,JSON.stringify(l));
-
-/* ===============================
-   VISTA "OGGI" AUTOMATICA (NUOVO)
-================================= */
-function hasRemindersToday(){
-  const list = loadReminders();
-  const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const end = start + 24*60*60*1000;
-
-  return list.some(r => !r.done && typeof r.dueAt === "number" && r.dueAt >= start && r.dueAt < end);
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g,m=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"
+  }[m]));
 }
 
-/* ===============================
-   PROMEMORIA PARSER
-================================= */
-function tryCreateReminderFromChat(text){
+function formatShort(ts){
+  const d = new Date(ts);
+  const dd = String(d.getDate()).padStart(2,"0");
+  const mm = String(d.getMonth()+1).padStart(2,"0");
+  const yyyy = d.getFullYear();
+  const hh = String(d.getHours()).padStart(2,"0");
+  const mi = String(d.getMinutes()).padStart(2,"0");
+  return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
+}
+
+function parseReminder(textRaw){
+  const text = (textRaw || "").trim();
   const low = text.toLowerCase();
-  if(!low.startsWith("ricordami")) return null;
+  if (!low.startsWith("ricordami")) return null;
 
-  const item = {
-    id:"r_"+Date.now(),
-    text:text.replace(/ricordami\s*/i,""),
-    dueAt:Date.now(),
-    done:false
-  };
-  const list = loadReminders();
-  list.unshift(item);
-  saveReminders(list);
-  return item;
+  let rest = text.slice("ricordami".length).trim();
+
+  let dueAt = null;
+  const now = new Date();
+  const baseToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0, 0, 0);
+
+  if (rest.toLowerCase().startsWith("oggi")) {
+    dueAt = baseToday.getTime();
+    rest = rest.slice(4).trim();
+  } else if (rest.toLowerCase().startsWith("domani")) {
+    const d = new Date(baseToday);
+    d.setDate(d.getDate()+1);
+    dueAt = d.getTime();
+    rest = rest.slice(6).trim();
+  } else {
+    const m = rest.match(/^(il\s+)?(\d{1,2})\/(\d{1,2})(\/(\d{4}))?/i);
+    if (m) {
+      const dd = parseInt(m[2],10);
+      const mm = parseInt(m[3],10) - 1;
+      const yyyy = m[5] ? parseInt(m[5],10) : now.getFullYear();
+      const d = new Date(yyyy, mm, dd, 9, 0, 0, 0);
+      dueAt = d.getTime();
+      rest = rest.slice(m[0].length).trim();
+    }
+  }
+
+  const t = rest.match(/^(alle\s+)?(\d{1,2}):(\d{2})/i);
+  if (t) {
+    const hh = Math.min(23, Math.max(0, parseInt(t[2],10)));
+    const mi = Math.min(59, Math.max(0, parseInt(t[3],10)));
+    const d = dueAt ? new Date(dueAt) : new Date(baseToday);
+    d.setHours(hh, mi, 0, 0);
+    dueAt = d.getTime();
+    rest = rest.slice(t[0].length).trim();
+  }
+
+  rest = rest.replace(/^di\s+/i, "").trim();
+  if (!rest) return null;
+  if (!dueAt) dueAt = baseToday.getTime();
+
+  return { text: rest, dueAt };
 }
 
 /* ===============================
-   AVVIO (NUOVO): OGGI AUTOMATICO
+   PROMEMORIA (SUPABASE)
 ================================= */
-if (hasRemindersToday()) {
-  showPromemoria();
-} else {
-  ai("Come posso aiutarti?");
-  inputBox.style.display = "flex";
+async function hasRemindersToday(){
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1).toISOString();
+
+  const { data, error } = await supabaseClient
+    .from("reminders")
+    .select("id")
+    .eq("user_email", user)
+    .eq("company", company)
+    .gte("due_at", start)
+    .lt("due_at", end)
+    .limit(1);
+
+  if (error) return false;
+  return (data && data.length > 0);
+}
+
+async function createReminderInDb(text, dueAtMs){
+  const dueIso = new Date(dueAtMs).toISOString();
+  const { error } = await supabaseClient
+    .from("reminders")
+    .insert([{ user_email: user, company: company, text: text, due_at: dueIso }]);
+  return !error;
+}
+
+async function deleteReminderInDb(id){
+  await supabaseClient.from("reminders").delete().eq("id", id);
+}
+
+async function showPromemoria(){
+  inputBox.style.display = "none";
+  chat.innerHTML = "<div style='font-size:17px;line-height:1.7'><h3>Promemoria</h3><p>Caricamento...</p></div>";
+
+  const { data, error } = await supabaseClient
+    .from("reminders")
+    .select("*")
+    .eq("user_email", user)
+    .eq("company", company)
+    .order("due_at", { ascending: true });
+
+  if (error) {
+    chat.innerHTML = "<div style='font-size:17px;line-height:1.7'><h3>Promemoria</h3><p style='color:red'>Errore caricamento promemoria</p></div>";
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    chat.innerHTML = "<div style='font-size:17px;line-height:1.7'><h3>Promemoria</h3><p>Nessun promemoria</p></div>";
+    return;
+  }
+
+  chat.innerHTML = `
+    <div style="font-size:17px;line-height:1.7">
+      <h3>Promemoria</h3>
+      ${data.map(r => `
+        <div style="padding:10px;border:1px solid #ddd;border-radius:10px;margin:8px 0">
+          <b>${escapeHtml(r.text)}</b>
+          <span style="opacity:.75;font-size:12px">(${formatShort(r.due_at)})</span><br>
+          <button data-id="${r.id}" data-act="done" style="margin-top:8px;padding:6px 10px;border-radius:8px;border:1px solid #ddd;background:#fff;cursor:pointer">✔️ Fatto</button>
+          <button data-id="${r.id}" data-act="delete" style="margin-top:8px;margin-left:6px;padding:6px 10px;border-radius:8px;border:1px solid #ddd;background:#fff;cursor:pointer">🗑</button>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+/* ===============================
+   TELEFONATE (placeholder)
+================================= */
+function showTelefonate(){
+  chat.innerHTML = `<div style="font-size:17px;line-height:1.7">
+    <h3>Telefonate</h3>
+    <p style="opacity:.8">Sezione in preparazione (la colleghiamo alla tabella <b>calls</b> dopo i promemoria).</p>
+  </div>`;
+  inputBox.style.display = "none";
 }
 
 /* ===============================
    INVIO MESSAGGI (CHAT + PROMEMORIA)
 ================================= */
-sendBtn.onclick = async ()=>{
-  msg.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault(); // evita a capo
-    sendBtn.click();    // simula click su "Invia"
-  }
-});
-
+async function handleSend(){
   if(!msg.value.trim()) return;
   const text = msg.value.trim();
   msg.value = "";
 
-  const reminder = tryCreateReminderFromChat(text);
-  if(reminder){
+  // 1) Se è un "ricordami ..." crea promemoria su Supabase
+  const parsed = parseReminder(text);
+  if (parsed) {
     userMsg(text);
-    ai("✅ Promemoria creato");
-    showPromemoria();
+    const ok = await createReminderInDb(parsed.text, parsed.dueAt);
+    if (ok) {
+      ai(`✅ Promemoria creato: "${parsed.text}" (${formatShort(parsed.dueAt)})`);
+      await showPromemoria();
+    } else {
+      ai("❌ Errore: non sono riuscito a salvare il promemoria su Supabase");
+      inputBox.style.display = "flex";
+    }
     return;
   }
 
+  // 2) Chat normale con AI
   userMsg(text);
   chatHistory.push({role:"user",content:text});
 
   const id = Date.now();
   chat.innerHTML += `<div class="msg-ai" id="ai_${id}"><span>Sto pensando...</span></div>`;
+  chat.scrollTop = chat.scrollHeight;
 
   try{
     const r = await fetch("https://company-ai-portal-static.onrender.com/chat",{
@@ -273,108 +387,181 @@ sendBtn.onclick = async ()=>{
     const d = await r.json();
     document.getElementById(`ai_${id}`).innerHTML =
       `<span>${escapeHtml(d.reply||"Errore")}</span>`;
-    chatHistory.push({role:"assistant",content:d.reply});
+    chatHistory.push({role:"assistant",content:d.reply || "Errore"});
+    chatModified = true;
   }catch{
-    document.getElementById(`ai_${id}`).innerHTML =
-      `<span>Errore connessione</span>`;
+    document.getElementById(`ai_${id}`).innerHTML = `<span>Errore connessione</span>`;
   }
-};
+}
+
+sendBtn.onclick = handleSend;
+
+// INVIO da tastiera (Enter = invia, Shift+Enter = a capo)
+msg.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    handleSend();
+  }
+});
 
 /* ===============================
-   PROMEMORIA VIEW
+   CLICK ACTIONS PROMEMORIA
 ================================= */
-async function showPromemoria(){
-  inputBox.style.display = "none";
-
-  chat.innerHTML = "<h3>Promemoria</h3><p>Caricamento...</p>";
-
-  const { data, error } = await supabaseClient
-    .from("reminders")
-    .select("*")
-    .eq("user_email", user)
-    .eq("company", company)
-    .order("due_at", { ascending: true });
-
-  if (error) {
-    chat.innerHTML = "<p>Errore caricamento promemoria</p>";
-    return;
-  }
-
-  if (!data.length) {
-    chat.innerHTML = "<h3>Promemoria</h3><p>Nessun promemoria</p>";
-    return;
-  }
-
-  chat.innerHTML = `
-    <h3>Promemoria</h3>
-    ${data.map(r => `
-      <div style="padding:10px;border:1px solid #ddd;border-radius:10px;margin:8px 0">
-        <b>${r.text}</b><br>
-        <small>${new Date(r.due_at).toLocaleString()}</small><br>
-        <button data-id="${r.id}" data-act="done">✔️ Fatto</button>
-      </div>
-    `).join("")}
-  `;
-}
 chat.addEventListener("click", async (e) => {
-  if (e.target.dataset.act !== "done") return;
+  const id = e.target?.dataset?.id;
+  const act = e.target?.dataset?.act;
+  if (!id || !act) return;
 
-  const id = e.target.dataset.id;
-
-  await supabaseClient
-    .from("reminders")
-    .delete()
-    .eq("id", id);
-
-  showPromemoria();
-});
-
-
-/* ===============================
-   PROMEMORIA ACTIONS
-================================= */
-chat.addEventListener("click",e=>{
-  const id = e.target.dataset.id;
-  const act = e.target.dataset.act;
-  if(!id||!act) return;
-
-  let list = loadReminders();
-  if(act==="done") list = list.filter(r=>r.id!==id);
-  if(act==="delete") list = list.filter(r=>r.id!==id);
-  saveReminders(list);
-  showPromemoria();
+  if (act === "done" || act === "delete") {
+    await deleteReminderInDb(id);
+    await showPromemoria();
+  }
 });
 
 /* ===============================
-   HELPERS
+   SALVA / DOWNLOAD CHAT
 ================================= */
-function escapeHtml(s){
-  return s.replace(/[&<>"']/g,m=>({
-    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"
-  }[m]));
+function saveChat(){
+  if(chatHistory.length===0){ alert("Niente da salvare"); return; }
+  let name = prompt("Nome della chat","");
+  if(!name) return;
+
+  let savedChats = JSON.parse(localStorage.getItem("savedChats")||"[]");
+  savedChats.push({name:name,history:chatHistory});
+  localStorage.setItem("savedChats",JSON.stringify(savedChats));
+  addChatToList(name);
+
+  chatHistory=[]; chat.innerHTML=""; ai("Come posso aiutarti?");
+  chatModified=false;
+  alert("Chat salvata come '"+name+"'");
+}
+
+function addChatToList(name){
+  const div = document.createElement("div");
+  div.className="chat-item";
+  div.innerHTML = `<span>${escapeHtml(name)}</span><span class="delete-btn">×</span>`;
+
+  const deleteBtn = div.querySelector(".delete-btn");
+  deleteBtn.onclick = (ev)=>{
+    ev.stopPropagation();
+    if(confirm("Sei sicuro di voler eliminare questa chat?")){
+      let savedChats = JSON.parse(localStorage.getItem("savedChats")||"[]");
+      savedChats = savedChats.filter(c=>c.name!==name);
+      localStorage.setItem("savedChats",JSON.stringify(savedChats));
+      div.remove();
+    }
+  };
+
+  div.onclick = ()=>{
+    if(chatModified && chatHistory.length>0 && !confirm("Ci sono modifiche non salvate, procedere?")) return;
+    const savedChats = JSON.parse(localStorage.getItem("savedChats")||"[]");
+    const c = savedChats.find(c=>c.name===name);
+    if(c){
+      chat.innerHTML=""; chatHistory=c.history;
+      chatHistory.forEach(m=>{ if(m.role==='user') userMsg(m.content); else ai(m.content); });
+      chatModified=false;
+      inputBox.style.display="flex";
+    }
+  };
+
+  chatList.appendChild(div);
+}
+
+function loadSavedChatsList(){
+  const savedChats = JSON.parse(localStorage.getItem("savedChats")||"[]");
+  chatList.innerHTML = "";
+  savedChats.forEach(c=>addChatToList(c.name));
+}
+
+function downloadChat(){
+  if(chatHistory.length===0){ alert("Niente da scaricare"); return; }
+  let fileName = prompt("Nome file","");
+  if(!fileName) return;
+  let text = chatHistory.map(m=>(m.role==='user'?'Utente':'AI')+": "+m.content).join("\n");
+  let a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text],{type:"text/plain"}));
+  a.download = fileName+".txt";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+saveBtn.onclick = saveChat;
+downloadBtn.onclick = downloadChat;
+
+/* ===============================
+   NAV / BUTTONS
+================================= */
+function askSave(callback){
+  if(chatModified && chatHistory.length>0){
+    if(confirm("La chat ha modifiche non salvate, vuoi salvare?")) saveChat();
+  }
+  callback();
+}
+
+document.getElementById("newChatBtn").onclick = ()=>askSave(()=>{
+  chatHistory=[]; chat.innerHTML=""; ai("Come posso aiutarti?");
+  inputBox.style.display="flex";
+});
+
+document.getElementById("promemoriaBtn").onclick = ()=>askSave(showPromemoria);
+document.getElementById("telefonateBtn").onclick = ()=>askSave(showTelefonate);
+
+document.getElementById("changeUserBtn").onclick = ()=>askSave(()=>{
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  // NON faccio clear() così non butti via savedChats
+  location.href="index.html";
+});
+
+window.addEventListener("beforeunload",(e)=>{
+  if(chatModified && chatHistory.length>0){
+    e.preventDefault();
+    e.returnValue="La chat ha modifiche non salvate, vuoi salvare?";
+  }
+});
+
+/* ===============================
+   CERCA CHAT
+================================= */
+document.getElementById("search").addEventListener("input",e=>{
+  let f=e.target.value.toLowerCase();
+  document.querySelectorAll("#chatList .chat-item").forEach(item=>{
+    item.style.display=item.textContent.toLowerCase().includes(f)?"flex":"none";
+  });
+});
+
+/* ===============================
+   MICROFONO
+================================= */
+if('webkitSpeechRecognition' in window){
+  const recognition = new webkitSpeechRecognition();
+  recognition.lang="it-IT";
+  recognition.continuous=false;
+  recognition.interimResults=false;
+  micBtn.onclick=()=> recognition.start();
+  recognition.onresult = function(event){
+    const spoken = event.results[0][0].transcript;
+    msg.value=spoken;
+    handleSend();
+  };
 }
 
 /* ===============================
-   BUTTONS
+   AVVIO
 ================================= */
-document.getElementById("promemoriaBtn").onclick = showPromemoria;
-document.getElementById("newChatBtn").onclick = ()=>{
-  chat.innerHTML=""; chatHistory=[]; ai("Come posso aiutarti?");
-  inputBox.style.display="flex";
-};
-document.getElementById("changeUserBtn").onclick = ()=>{
-  localStorage.clear(); location.href="index.html";
-};
+(async function init(){
+  loadSavedChatsList();
+
+  // Vista automatica: se hai promemoria per oggi => apri Promemoria, altrimenti chat normale
+  const today = await hasRemindersToday();
+  if (today) {
+    await showPromemoria();
+  } else {
+    ai("Come posso aiutarti?");
+    inputBox.style.display = "flex";
+  }
+})();
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  const supabaseClient = supabase.createClient(
-    "https://yjpqmevwzoqdtkahxdej.supabase.co",
-    "sb_publishable_08Xb3z6ASnEn9dl84UG4_Q_L_4gHqfw"
-  );
-</script>
-
- 
 </body>
 </html>
