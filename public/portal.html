@@ -283,20 +283,52 @@ sendBtn.onclick = async ()=>{
 /* ===============================
    PROMEMORIA VIEW
 ================================= */
-function showPromemoria(){
-  const list = loadReminders();
+async function showPromemoria(){
+  inputBox.style.display = "none";
+
+  chat.innerHTML = "<h3>Promemoria</h3><p>Caricamento...</p>";
+
+  const { data, error } = await supabase
+    .from("reminders")
+    .select("*")
+    .eq("user_email", user)
+    .eq("company", company)
+    .order("due_at", { ascending: true });
+
+  if (error) {
+    chat.innerHTML = "<p>Errore caricamento promemoria</p>";
+    return;
+  }
+
+  if (!data.length) {
+    chat.innerHTML = "<h3>Promemoria</h3><p>Nessun promemoria</p>";
+    return;
+  }
+
   chat.innerHTML = `
     <h3>Promemoria</h3>
-    ${list.map(r=>`
+    ${data.map(r => `
       <div style="padding:10px;border:1px solid #ddd;border-radius:10px;margin:8px 0">
-        <b>${escapeHtml(r.text)}</b><br>
+        <b>${r.text}</b><br>
+        <small>${new Date(r.due_at).toLocaleString()}</small><br>
         <button data-id="${r.id}" data-act="done">✔️ Fatto</button>
-        <button data-id="${r.id}" data-act="delete">🗑</button>
       </div>
-    `).join("") || "<p>Nessun promemoria</p>"}
+    `).join("")}
   `;
-  inputBox.style.display="none";
 }
+chat.addEventListener("click", async (e) => {
+  if (e.target.dataset.act !== "done") return;
+
+  const id = e.target.dataset.id;
+
+  await supabase
+    .from("reminders")
+    .delete()
+    .eq("id", id);
+
+  showPromemoria();
+});
+
 
 /* ===============================
    PROMEMORIA ACTIONS
@@ -335,5 +367,13 @@ document.getElementById("changeUserBtn").onclick = ()=>{
 };
 </script>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const supabase = supabase.createClient(
+    "https://yjpqmevwzoqdtkahxdej.supabase.co",
+    "sb_publishable_08Xb3z6ASnEn9dl84UG4_Q_L_4gHqfw"
+  );
+</script>
+ 
 </body>
 </html>
