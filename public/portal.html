@@ -99,61 +99,21 @@ textarea { flex:1; resize:none; padding:14px; border-radius:12px; border:1px sol
     </div>
   </div>
 </div>
-
 <script>
 /* ===============================
-   BLOCCO ACCESSO SENZA LOGIN
+   ACCESSO
 =================================*/
 const token = localStorage.getItem("token");
 const storedUser = localStorage.getItem("user");
-
 if (!token || !storedUser) {
   window.location.replace("index.html");
 }
 
 const user = storedUser || "Utente";
-  avatar.textContent = user.slice(0,2).toUpperCase();
-profileName.textContent = user;
-
 const company = localStorage.getItem("company") || "Lucagri";
-/* ===============================
-   PROMEMORIA: STORAGE PER UTENTE+AZIENDA
-=================================*/
-function remindersKey() {
-  return `reminders:${company}:${user}`;
-}
-
-function loadReminders() {
-  try {
-    return JSON.parse(localStorage.getItem(remindersKey()) || "[]");
-  } catch {
-    return [];
-  }
-}
-
-function saveReminders(list) {
-  localStorage.setItem(remindersKey(), JSON.stringify(list));
-}
-
-function addReminder(item) {
-  const list = loadReminders();
-  list.unshift(item);
-  saveReminders(list);
-}
-
-function updateReminder(id, patch) {
-  const list = loadReminders().map(r => (r.id === id ? { ...r, ...patch } : r));
-  saveReminders(list);
-}
-
-function deleteReminder(id) {
-  const list = loadReminders().filter(r => r.id !== id);
-  saveReminders(list);
-}
-
 
 /* ===============================
-   INIZIALIZZAZIONE
+   ELEMENTI DOM
 =================================*/
 const avatar = document.getElementById("avatar");
 const profileName = document.getElementById("profileName");
@@ -169,553 +129,179 @@ const saveBtn = document.getElementById("saveBtn");
 const downloadBtn = document.getElementById("downloadBtn");
 const chatList = document.getElementById("chatList");
 
-let chatHistory = [];
-let chatModified = false;
-
+/* ===============================
+   UTENTE
+=================================*/
 avatar.textContent = user.slice(0,2).toUpperCase();
 profileName.textContent = user;
 
+/* ===============================
+   TEMA AZIENDA
+=================================*/
 const companyData = {
- Lucagri:{sidebar:"linear-gradient(180deg,#7de3a2,#2ecc71)",send:"#2ecc71",logo:"logo.png",link:"https://www.lucagri.it/"},
- Agrichampion:{sidebar:"linear-gradient(180deg,#ffdba8,#f39c12)",send:"#f39c12",logo:"logo2.png",link:"https://agrichampion.com/"},
- Cabreganze:{sidebar:"linear-gradient(180deg,#f6e6a8,#d4af37)",send:"#d4af37",logo:"logo3.jpg",link:"https://www.cabreganze.com/"}
+  Lucagri:{sidebar:"linear-gradient(180deg,#7de3a2,#2ecc71)",send:"#2ecc71",logo:"logo.png",link:"https://www.lucagri.it/"},
+  Agrichampion:{sidebar:"linear-gradient(180deg,#ffdba8,#f39c12)",send:"#f39c12",logo:"logo2.png",link:"https://agrichampion.com/"},
+  Cabreganze:{sidebar:"linear-gradient(180deg,#f6e6a8,#d4af37)",send:"#d4af37",logo:"logo3.jpg",link:"https://www.cabreganze.com/"}
 };
-
 const theme = companyData[company] || companyData.Lucagri;
 sidebar.style.background = theme.sidebar;
 sendBtn.style.background = theme.send;
 logo.src = theme.logo;
 logoLink.href = theme.link;
 
+/* ===============================
+   CHAT BASE
+=================================*/
+let chatHistory = [];
+function ai(text){
+  chat.innerHTML += `<div class="msg-ai"><span>${escapeHtml(text)}</span></div>`;
+  chat.scrollTop = chat.scrollHeight;
+}
+function userMsg(text){
+  chat.innerHTML += `<div class="msg-user"><span>${escapeHtml(text)}</span></div>`;
+  chat.scrollTop = chat.scrollHeight;
+}
 ai("Come posso aiutarti?");
-showPromemoria();
 
 /* ===============================
-   PROMEMORIA: STORAGE PER UTENTE+AZIENDA
+   PROMEMORIA STORAGE
 =================================*/
-function remindersKey() {
-  return `reminders:${company}:${user}`;
+function remindersKey(){ return `reminders:${company}:${user}`; }
+function loadReminders(){
+  try { return JSON.parse(localStorage.getItem(remindersKey()) || "[]"); }
+  catch { return []; }
 }
-
-function loadReminders() {
-  try {
-    return JSON.parse(localStorage.getItem(remindersKey()) || "[]");
-  } catch {
-    return [];
-  }
-}
-
-function saveReminders(list) {
+function saveReminders(list){
   localStorage.setItem(remindersKey(), JSON.stringify(list));
 }
-
-function addReminder(item) {
+function addReminder(r){
   const list = loadReminders();
-  list.unshift(item);
+  list.unshift(r);
   saveReminders(list);
 }
-
-function updateReminder(id, patch) {
-  const list = loadReminders().map(r => (r.id === id ? { ...r, ...patch } : r));
-  saveReminders(list);
+function updateReminder(id, patch){
+  saveReminders(loadReminders().map(r => r.id===id ? {...r,...patch} : r));
 }
-
-function deleteReminder(id) {
-  const list = loadReminders().filter(r => r.id !== id);
-  saveReminders(list);
+function deleteReminder(id){
+  saveReminders(loadReminders().filter(r => r.id!==id));
 }
 
 /* ===============================
-   FUNZIONI CHAT
+   HELPERS
 =================================*/
-function ai(text){ chat.innerHTML += `<div class="msg-ai"><span>${text}</span></div>`; chat.scrollTop=chat.scrollHeight; chatModified=true; }
-function userMsg(text){ chat.innerHTML += `<div class="msg-user"><span>${text}</span></div>`; chat.scrollTop=chat.scrollHeight; chatModified=true; }
-
-/* ===============================
-   HELPERS PROMEMORIA (escape + parsing "ricordami")
-=================================*/
-function escapeHtml(str){
-  return String(str)
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
+function escapeHtml(s){
+  return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
 }
-
 function formatShort(ts){
-  const d = new Date(ts);
-  const dd = String(d.getDate()).padStart(2,"0");
-  const mm = String(d.getMonth()+1).padStart(2,"0");
-  const yyyy = d.getFullYear();
-  const hh = String(d.getHours()).padStart(2,"0");
-  const mi = String(d.getMinutes()).padStart(2,"0");
-  return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
-}
-
-function tryCreateReminderFromChat(textRaw){
-  const text = (textRaw || "").trim();
-  const low = text.toLowerCase();
-
-  if (!low.startsWith("ricordami")) return null;
-
-  let rest = text.slice("ricordami".length).trim();
-
-  let dueAt = null;
-  const now = new Date();
-  const baseToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0, 0, 0);
-
-  if (rest.toLowerCase().startsWith("oggi")) {
-    dueAt = baseToday.getTime();
-    rest = rest.slice(4).trim();
-  } else if (rest.toLowerCase().startsWith("domani")) {
-    const d = new Date(baseToday);
-    d.setDate(d.getDate()+1);
-    dueAt = d.getTime();
-    rest = rest.slice(6).trim();
-  } else {
-    const m = rest.match(/^(il\s+)?(\d{1,2})\/(\d{1,2})(\/(\d{4}))?/i);
-    if (m) {
-      const dd = parseInt(m[2],10);
-      const mm = parseInt(m[3],10) - 1;
-      const yyyy = m[5] ? parseInt(m[5],10) : now.getFullYear();
-      const d = new Date(yyyy, mm, dd, 9, 0, 0, 0);
-      dueAt = d.getTime();
-      rest = rest.slice(m[0].length).trim();
-    }
-  }
-
-  const t = rest.match(/^(alle\s+)?(\d{1,2}):(\d{2})/i);
-  if (t) {
-    const hh = Math.min(23, Math.max(0, parseInt(t[2],10)));
-    const mi = Math.min(59, Math.max(0, parseInt(t[3],10)));
-    const d = dueAt ? new Date(dueAt) : new Date(baseToday);
-    d.setHours(hh, mi, 0, 0);
-    dueAt = d.getTime();
-    rest = rest.slice(t[0].length).trim();
-  }
-
-  rest = rest.replace(/^di\s+/i, "").trim();
-  if (!rest) return null;
-
-  if (!dueAt) dueAt = baseToday.getTime();
-
-  const item = {
-    id: `r_${Date.now()}_${Math.random().toString(16).slice(2)}`,
-    text: rest,
-    dueAt,
-    createdAt: Date.now(),
-    done: false,
-    doneAt: null,
-    source: "chat"
-  };
-
-  addReminder(item);
-  return item;
+  const d=new Date(ts);
+  return d.toLocaleString("it-IT");
 }
 
 /* ===============================
-   SALVATAGGIO / DOWNLOAD
+   PARSE "RICORDAMI"
 =================================*/
-function saveChat(){
-  if(chatHistory.length===0){ alert("Niente da salvare"); return; }
-  let name = prompt("Nome della chat","");
-  if(!name) return;
-  let savedChats = JSON.parse(localStorage.getItem("savedChats")||"[]");
-  savedChats.push({name:name,history:chatHistory});
-  localStorage.setItem("savedChats",JSON.stringify(savedChats));
-  addChatToList(name);
-  chatHistory=[]; chat.innerHTML=""; ai("Come posso aiutarti?");
-  chatModified=false;
-  alert("Chat salvata come '"+name+"'");
-}
+function tryCreateReminderFromChat(text){
+  if (!text.toLowerCase().startsWith("ricordami")) return null;
+  const now = new Date();
+  const due = new Date(now.getFullYear(),now.getMonth(),now.getDate(),9,0,0).getTime();
+  const clean = text.replace(/^ricordami/i,"").replace(/^di/i,"").trim();
+  if (!clean) return null;
 
-function addChatToList(name){
-  const div = document.createElement("div");
-  div.className="chat-item";
-  div.innerHTML = `<span>${name}</span><span class="delete-btn">×</span>`;
-  const deleteBtn = div.querySelector(".delete-btn");
-  deleteBtn.onclick = (e)=>{
-    e.stopPropagation();
-    if(confirm("Sei sicuro di voler eliminare questa chat?")){
-      let savedChats = JSON.parse(localStorage.getItem("savedChats")||"[]");
-      savedChats = savedChats.filter(c=>c.name!==name);
-      localStorage.setItem("savedChats",JSON.stringify(savedChats));
-      div.remove();
-    }
+  const r = {
+    id:`r_${Date.now()}`,
+    text: clean,
+    dueAt: due,
+    createdAt: Date.now(),
+    done:false
   };
-  div.onclick = ()=>{
-    if(chatModified && chatHistory.length>0 && !confirm("Ci sono modifiche non salvate, procedere?")) return;
-    const savedChats = JSON.parse(localStorage.getItem("savedChats")||"[]");
-    const c = savedChats.find(c=>c.name===name);
-    if(c){ chat.innerHTML=""; chatHistory=c.history; chatHistory.forEach(m=>{ if(m.role==='user') userMsg(m.content); else ai(m.content); }); chatModified=false; inputBox.style.display="flex"; }
-  };
-  chatList.appendChild(div);
-}
-
-function downloadChat(){
-  if(chatHistory.length===0){ alert("Niente da scaricare"); return; }
-  let fileName = prompt("Nome file","");
-  if(!fileName) return;
-  let text = chatHistory.map(m=>(m.role==='user'?'Utente':'AI')+": "+m.content).join("\n");
-  let a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([text],{type:"text/plain"}));
-  a.download = fileName+".txt";
-  a.click();
-  URL.revokeObjectURL(a.href);
+  addReminder(r);
+  return r;
 }
 
 /* ===============================
-   INVIO MESSAGGI
+   INVIO CHAT
 =================================*/
 sendBtn.onclick = async ()=>{
   if(!msg.value.trim()) return;
-  const text = msg.value; msg.value="";
+  const text = msg.value.trim();
+  msg.value = "";
 
-    const created = tryCreateReminderFromChat(text);
-  if (created) {
-    userMsg(text); chatHistory.push({ role:"user", content:text });
-
-    ai(`✅ Promemoria creato: "${escapeHtml(created.text)}" (${formatShort(created.dueAt)})`);
-    chatHistory.push({ role:"assistant", content:`Promemoria creato: ${created.text}` });
-
-    if (chat.innerHTML.includes("<h3>Promemoria</h3>")) showPromemoria();
-    if(text.toLowerCase().startsWith("ricordami")) {
+  const reminder = tryCreateReminderFromChat(text);
+  if (reminder){
+    userMsg(text);
+    ai("✅ Promemoria creato");
+    showPromemoria();
     return;
   }
 
-
-  userMsg(text); chatHistory.push({role:"user",content:text});
+  userMsg(text);
   const loadId = Date.now();
-  chat.innerHTML += `<div class="msg-ai" id="ai_${loadId}"><span>Sto elaborando la risposta...</span></div>`;
+  chat.innerHTML += `<div class="msg-ai" id="ai_${loadId}"><span>Sto pensando...</span></div>`;
+
   try{
-    const res = await fetch("https://company-ai-portal-static.onrender.com/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({history:chatHistory})});
+    const res = await fetch("https://company-ai-portal-static.onrender.com/chat",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({history:chatHistory})
+    });
     const data = await res.json();
-    const box = document.getElementById(`ai_${loadId}`);
-    if(data.success){ box.innerHTML=`<span>${data.reply}</span>`; chatHistory.push({role:"assistant",content:data.reply}); chatModified=true; }
-    else box.innerHTML=`<span>Errore AI: ${data.error}</span>`;
-  }catch(err){ document.getElementById(`ai_${loadId}`).innerHTML=`<span>Errore connessione server</span>`; }
+    document.getElementById(`ai_${loadId}`).innerHTML = `<span>${escapeHtml(data.reply||"Errore")}</span>`;
+  }catch{
+    document.getElementById(`ai_${loadId}`).innerHTML = `<span>Errore server</span>`;
+  }
 };
 
-msg.addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); sendBtn.click(); } });
-
 /* ===============================
-   MICROFONO ATTIVO
+   PROMEMORIA VIEW
 =================================*/
-if('webkitSpeechRecognition' in window){
-  const recognition = new webkitSpeechRecognition();
-  recognition.lang="it-IT";
-  recognition.continuous=false;
-  recognition.interimResults=false;
-  micBtn.onclick=()=> recognition.start();
-  recognition.onresult = function(event){
-    const spoken = event.results[0][0].transcript;
-    msg.value=spoken;
-    sendBtn.click();
-  };
+function row(r){
+  const when = r.dueAt ? ` <small>(${formatShort(r.dueAt)})</small>` : "";
+  return `
+    <div style="border:1px solid #ddd;padding:8px;border-radius:8px;margin:6px 0">
+      <b>${escapeHtml(r.text)}</b>${when}
+      <div style="margin-top:6px">
+        <button data-act="done" data-id="${r.id}">✔️ Fatto</button>
+        <button data-act="delete" data-id="${r.id}">🗑</button>
+      </div>
+    </div>`;
 }
 
-/* ===============================
-   NAVIGAZIONE
-=================================*/
-function askSave(callback){ if(chatModified && chatHistory.length>0){ if(confirm("La chat ha modifiche non salvate, vuoi salvare?")) saveChat(); } callback(); }
-
-document.getElementById("newChatBtn").onclick = ()=>askSave(()=>{ chatHistory=[]; chat.innerHTML=""; ai("Come posso aiutarti?"); inputBox.style.display="flex"; });
-document.getElementById("promemoriaBtn").onclick = ()=>askSave(showPromemoria);
-document.getElementById("telefonateBtn").onclick = ()=>askSave(showTelefonate);
-
-document.getElementById("changeUserBtn").onclick = ()=>askSave(()=>{
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
-  window.location.href = "index.html";
-});
-
-window.addEventListener("beforeunload",(e)=>{ if(chatModified && chatHistory.length>0){ e.preventDefault(); e.returnValue="La chat ha modifiche non salvate, vuoi salvare?"; } });
-
-/* ===============================
-   CERCA CHAT
-=================================*/
-document.getElementById("search").addEventListener("input",e=>{
-  let f=e.target.value.toLowerCase();
-  document.querySelectorAll("#chatList .chat-item").forEach(item=>{ item.style.display=item.textContent.toLowerCase().includes(f)?"flex":"none"; });
-});
-
-/* ===============================
-   PULSANTI SALVA / DOWNLOAD
-=================================*/
-saveBtn.onclick = saveChat;
-downloadBtn.onclick = downloadChat;
-
-/* ===============================
-   SEZIONI
-=================================*/
 function showPromemoria(){
   const list = loadReminders();
-
-  const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const endOfToday = startOfToday + 24*60*60*1000;
-
-  const dueToday = [];
-  const dueFuture = [];
-  const done = [];
-
-  for (const r of list) {
-    if (r.done) { done.push(r); continue; }
-    if (typeof r.dueAt === "number" && r.dueAt >= startOfToday && r.dueAt < endOfToday) dueToday.push(r);
-    else dueFuture.push(r);
-  }
-
   chat.innerHTML = `
-    <div style="font-size:16px;line-height:1.6">
-      <h3>Promemoria</h3>
-
-      <button id="genCallsBtn"
-        style="margin-bottom:12px;padding:8px 12px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer">
-        Genera chiamate di oggi (demo)
-      </button>
-
-      <h4>📅 Oggi</h4>
-      ${dueToday.length ? dueToday.map(r => reminderRow(r)).join("") : "<p>Nessun promemoria oggi</p>"}
-
-      <h4>⏳ Prossimi</h4>
-      ${dueFuture.length ? dueFuture.map(r => reminderRow(r)).join("") : "<p>Nessun promemoria futuro</p>"}
-
-      <h4>✅ Completati</h4>
-      ${done.length ? done.map(r => reminderRow(r, true)).join("") : "<p>Nessun promemoria completato</p>"}
-    </div>
+    <h3>Promemoria</h3>
+    ${list.length ? list.map(row).join("") : "<p>Nessun promemoria</p>"}
   `;
-
-  inputBox.style.display = "none";
-
-  // collega il bottone "Genera chiamate"
-const btn = document.getElementById("genCallsBtn");
-if (btn) {
-  btn.onclick = () => {
-    generateTodayCallRemindersDemo();
-    showPromemoria(); // ricarica la lista
-  };
-}
-  // 👉 COLLEGAMENTO BOTTONE
-  const btn = document.getElementById("genCallsBtn");
-  if (btn) {
-    btn.onclick = () => {
-      generateTodayCallRemindersDemo();
-      showPromemoria(); // refresh vista
-    };
-  }
+  inputBox.style.display="none";
 }
 
-
-function row(r){
-  const when = r.dueAt
-    ? ` <span style="opacity:.75;font-size:12px">(${formatShort(r.dueAt)})</span>`
-    : "";
-
-  const isCall = r.text.toLowerCase().startsWith("chiamare");
-
-  const callActions = (!r.done && isCall) ? `
-    <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
-      <button data-act="call-ok" data-id="${r.id}">✔️ Richiamare</button>
-      <button data-act="call-no" data-id="${r.id}">❌ Non interessato</button>
-      <button data-act="call-mail" data-id="${r.id}">📧 Inviare mail</button>
-      <button data-act="call-wrong" data-id="${r.id}">☎️ Numero errato</button>
-    </div>
-  ` : "";
-
-  return `
-    <div style="display:flex;gap:10px;align-items:flex-start;padding:10px;border:1px solid #eee;border-radius:10px;margin:8px 0">
-      <input type="checkbox" ${r.done ? "checked" : ""} data-act="toggle" data-id="${r.id}" style="margin-top:3px">
-
-      <div style="flex:1">
-        <div style="font-size:15px">
-          ${escapeHtml(r.text)}${when}
-        </div>
-
-        <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">
-          <button data-act="tomorrow" data-id="${r.id}">Domani</button>
-          <button data-act="delete" data-id="${r.id}">Elimina</button>
-        </div>
-
-        ${callActions}
-      </div>
-    </div>
-  `;
-}
-
-  chat.innerHTML = `
-    <div style="font-size:17px;line-height:1.7">
-      <h3>Promemoria</h3>
-      <button id="genCallsBtn" style="margin-bottom:12px;padding:8px 12px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer">
-  Genera chiamate di oggi (demo)
-</button>
-
-      <p style="margin-top:-8px;opacity:.8">
-        Scrivi in chat: <b>“ricordami ...”</b> per crearne uno.<br>
-        Esempi: <i>“ricordami domani di chiamare Mario”</i> – <i>“ricordami il 25/01/2026 alle 16:30 di mandare deplan a Marco”</i>
-      </p>
-
-      <h4>📅 Oggi</h4>
-      ${dueToday.length ? dueToday.map(row).join("") : `<p style="opacity:.7">Nessun promemoria per oggi.</p>`}
-
-      <h4>⏳ Prossimi</h4>
-      ${dueFuture.length ? dueFuture.map(row).join("") : `<p style="opacity:.7">Nessun promemoria futuro.</p>`}
-
-      <h4>✅ Completati</h4>
-      ${done.length ? done.slice(0,30).map(row).join("") : `<p style="opacity:.7">Nessun completato.</p>`}
-    </div>
-  `;
-
-  inputBox.style.display="flex";
-
-  chat.querySelectorAll("[data-act]").forEach(el=>{
-    el.addEventListener("click", ()=>{
-      const act = el.getAttribute("data-act");
-      const id = el.getAttribute("data-id");
-
-      if (act === "delete") {
-        deleteReminder(id);
-        showPromemoria();
-      }
-
-      if (act === "tomorrow") {
-        const d = new Date();
-        d.setDate(d.getDate()+1);
-        d.setHours(9,0,0,0);
-        updateReminder(id, { dueAt: d.getTime() });
-        showPromemoria();
-      }
-    });
-  });
-
-  chat.querySelectorAll('input[type="checkbox"][data-act="toggle"]').forEach(cb=>{
-    cb.addEventListener("change", ()=>{
-      const id = cb.getAttribute("data-id");
-      updateReminder(id, { done: cb.checked, doneAt: cb.checked ? Date.now() : null });
-      showPromemoria();
-      chat.addEventListener("click", (e) => {
-  const btn = e.target;
-  const act = btn.dataset?.act;
-  const id = btn.dataset?.id;
-  if (!act || !id) return;
-
-  if (act === "toggle") {
-    updateReminder(id,{ done: !btn.checked, doneAt: btn.checked ? Date.now() : null });
-  }
-
-  if (act === "tomorrow") {
-    const d = new Date();
-    d.setDate(d.getDate()+1);
-    d.setHours(9,0,0,0);
-    updateReminder(id,{ dueAt: d.getTime() });
-  }
-
-  if (act === "delete") {
-    if(confirm("Eliminare questo promemoria?")) deleteReminder(id);
-  }
-
-  if (act === "call-ok") {
-    updateReminder(id,{ done:true, outcome:"richiamare", doneAt:Date.now() });
-  }
-  if (act === "call-no") {
-    updateReminder(id,{ done:true, outcome:"non_interessato", doneAt:Date.now() });
-  }
-  if (act === "call-mail") {
-    updateReminder(id,{ done:true, outcome:"inviare_mail", doneAt:Date.now() });
-  }
-  if (act === "call-wrong") {
-    updateReminder(id,{ done:true, outcome:"numero_errato", doneAt:Date.now() });
-  }
-
+/* ===============================
+   CLICK PROMEMORIA
+=================================*/
+chat.addEventListener("click",e=>{
+  const act=e.target.dataset.act;
+  const id=e.target.dataset.id;
+  if(!act||!id) return;
+  if(act==="delete") deleteReminder(id);
+  if(act==="done") updateReminder(id,{done:true});
   showPromemoria();
 });
 
-    });
-  });
-}
-
-function showTelefonate(){ chat.innerHTML=`<div style="font-size:17px;line-height:1.7"><h3>Telefonate</h3><h4>✔️ Interessati</h4><table border="1" cellpadding="6" style="border-collapse:collapse;width:100%"><tr><th>Nome</th><th>Numero</th><th>Data chiamata</th></tr><tr><td>Mario Rossi</td><td>3331234567</td><td>05/01/2026</td></tr><tr><td>Lucia Bianchi</td><td>3499876543</td><td>07/01/2026</td></tr></table><br><h4>📧 Da reinviare email</h4><table border="1" cellpadding="6" style="border-collapse:collapse;width:100%"><tr><th>Nome</th><th>Email</th><th>Data chiamata</th></tr><tr><td>Paolo Verdi</td><td>paolo@example.com</td><td>06/01/2026</td></tr><tr><td>Anna Blu</td><td>anna@example.com</td><td>08/01/2026</td></tr></table></div>`; inputBox.style.display="none"; }
-function escapeHtml(str){
-  return String(str)
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
-}
-
-function formatShort(ts){
-  const d = new Date(ts);
-  const dd = String(d.getDate()).padStart(2,"0");
-  const mm = String(d.getMonth()+1).padStart(2,"0");
-  const yyyy = d.getFullYear();
-  const hh = String(d.getHours()).padStart(2,"0");
-  const mi = String(d.getMinutes()).padStart(2,"0");
-  return `${dd}/${mm}/${yyyy} ${hh}:${mi}`;
-}
-
-function tryCreateReminderFromChat(textRaw){
-  const text = (textRaw || "").trim();
-  const low = text.toLowerCase();
-
-  if (!low.startsWith("ricordami")) return null;
-
-  let rest = text.slice("ricordami".length).trim();
-
-  let dueAt = null;
-  const now = new Date();
-  const baseToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0, 0, 0);
-
-  if (rest.toLowerCase().startsWith("oggi")) {
-    dueAt = baseToday.getTime();
-    rest = rest.slice(4).trim();
-  } else if (rest.toLowerCase().startsWith("domani")) {
-    const d = new Date(baseToday);
-    d.setDate(d.getDate()+1);
-    dueAt = d.getTime();
-    rest = rest.slice(6).trim();
-  } else {
-    const m = rest.match(/^(il\s+)?(\d{1,2})\/(\d{1,2})(\/(\d{4}))?/i);
-    if (m) {
-      const dd = parseInt(m[2],10);
-      const mm = parseInt(m[3],10) - 1;
-      const yyyy = m[5] ? parseInt(m[5],10) : now.getFullYear();
-      const d = new Date(yyyy, mm, dd, 9, 0, 0, 0);
-      dueAt = d.getTime();
-      rest = rest.slice(m[0].length).trim();
-    }
-  }
-
-  const t = rest.match(/^(alle\s+)?(\d{1,2}):(\d{2})/i);
-  if (t) {
-    const hh = Math.min(23, Math.max(0, parseInt(t[2],10)));
-    const mi = Math.min(59, Math.max(0, parseInt(t[3],10)));
-    const d = dueAt ? new Date(dueAt) : new Date(baseToday);
-    d.setHours(hh, mi, 0, 0);
-    dueAt = d.getTime();
-    rest = rest.slice(t[0].length).trim();
-  }
-
-  rest = rest.replace(/^di\s+/i, "").trim();
-  if (!rest) return null;
-
-  if (!dueAt) dueAt = baseToday.getTime();
-
-  const item = {
-    id: `r_${Date.now()}_${Math.random().toString(16).slice(2)}`,
-    text: rest,
-    dueAt,
-    createdAt: Date.now(),
-    done: false,
-    doneAt: null,
-    source: "chat"
-  };
-
-  addReminder(item);
-  return item;
-}
-
+/* ===============================
+   NAV
+=================================*/
+document.getElementById("promemoriaBtn").onclick = showPromemoria;
+document.getElementById("newChatBtn").onclick = ()=>{
+  chat.innerHTML="";
+  inputBox.style.display="flex";
+  ai("Come posso aiutarti?");
+};
+document.getElementById("changeUserBtn").onclick = ()=>{
+  localStorage.clear();
+  location.href="index.html";
+};
 </script>
+
 
 </body>
 </html>
