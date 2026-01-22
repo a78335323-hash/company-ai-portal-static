@@ -112,6 +112,9 @@ if (!token || !storedUser) {
 }
 
 const user = storedUser || "Utente";
+  avatar.textContent = user.slice(0,2).toUpperCase();
+profileName.textContent = user;
+
 const company = localStorage.getItem("company") || "Lucagri";
 /* ===============================
    PROMEMORIA: STORAGE PER UTENTE+AZIENDA
@@ -377,6 +380,7 @@ sendBtn.onclick = async ()=>{
     chatHistory.push({ role:"assistant", content:`Promemoria creato: ${created.text}` });
 
     if (chat.innerHTML.includes("<h3>Promemoria</h3>")) showPromemoria();
+    if(text.toLowerCase().startsWith("ricordami")) {
     return;
   }
 
