@@ -350,25 +350,60 @@ function showTelefonate(){
 /* ===============================
    INVIO MESSAGGI (CHAT + PROMEMORIA)
 ================================= */
-async function handleSend(){
-  if(!msg.value.trim()) return;
+async function handleSend() {
+  // 🔒 Blocco invio se input non visibile (Promemoria / Telefonate)
+  if (!inputBox || inputBox.style.display === "none") return;
+
+  if (!msg.value.trim()) return;
+
   const text = msg.value.trim();
   msg.value = "";
+
+  // ✅ Mostra subito il messaggio utente
+  userMsg(text);
 
   // 1) Se è un "ricordami ..." crea promemoria su Supabase
   const parsed = parseReminder(text);
   if (parsed) {
-    userMsg(text);
     const ok = await createReminderInDb(parsed.text, parsed.dueAt);
+
     if (ok) {
       ai(`✅ Promemoria creato: "${parsed.text}" (${formatShort(parsed.dueAt)})`);
-      await showPromemoria();
+      await showPromemoria(); // ricarica vista promemoria
     } else {
       ai("❌ Errore: non sono riuscito a salvare il promemoria su Supabase");
       inputBox.style.display = "flex";
     }
     return;
   }
+
+  // 2) Altrimenti: chat normale con AI
+  chatHistory.push({ role: "user", content: text });
+
+  const id = Date.now();
+  chat.innerHTML += `<div class="msg-ai" id="ai_${id}"><span>Sto pensando...</span></div>`;
+  chat.scrollTop = chat.scrollHeight;
+
+  try {
+    const r = await fetch("https://company-ai-portal-static.onrender.com/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ history: chatHistory })
+    });
+
+    const d = await r.json();
+    const reply = d?.reply || "Errore";
+
+    const box = document.getElementById(`ai_${id}`);
+    if (box) box.innerHTML = `<span>${escapeHtml(reply)}</span>`;
+
+    chatHistory.push({ role: "assistant", content: reply });
+  } catch (e) {
+    const box = document.getElementById(`ai_${id}`);
+    if (box) box.innerHTML = `<span>Errore connessione</span>`;
+  }
+}
+
 
   // 2) Chat normale con AI
   userMsg(text);
