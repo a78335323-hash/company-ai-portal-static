@@ -288,7 +288,7 @@ async function showPromemoria(){
 
   chat.innerHTML = "<h3>Promemoria</h3><p>Caricamento...</p>";
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from("reminders")
     .select("*")
     .eq("user_email", user)
@@ -321,7 +321,7 @@ chat.addEventListener("click", async (e) => {
 
   const id = e.target.dataset.id;
 
-  await supabase
+  await supabaseClient
     .from("reminders")
     .delete()
     .eq("id", id);
@@ -369,11 +369,12 @@ document.getElementById("changeUserBtn").onclick = ()=>{
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  const supabase = supabase.createClient(
+  const supabaseClient = supabase.createClient(
     "https://yjpqmevwzoqdtkahxdej.supabase.co",
     "sb_publishable_08Xb3z6ASnEn9dl84UG4_Q_L_4gHqfw"
   );
 </script>
+
  
 </body>
 </html>
