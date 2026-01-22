@@ -239,6 +239,13 @@ if (hasRemindersToday()) {
    INVIO MESSAGGI (CHAT + PROMEMORIA)
 ================================= */
 sendBtn.onclick = async ()=>{
+  msg.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault(); // evita a capo
+    sendBtn.click();    // simula click su "Invia"
+  }
+});
+
   if(!msg.value.trim()) return;
   const text = msg.value.trim();
   msg.value = "";
