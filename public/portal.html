@@ -129,11 +129,28 @@ profileName.textContent = user;
 /* ===============================
    THEME
 ================================= */
-const companyData = {
-  Lucagri:{sidebar:"#2ecc71"},
-  Agrichampion:{sidebar:"#f39c12"}
+const logo = document.getElementById("logo");
+const logoLink = document.getElementById("logoLink");
+
+const companyDataFull = {
+  Lucagri: {
+    sidebar: "#2ecc71",
+    logo: "logo.png",
+    link: "https://www.lucagri.it/"
+  },
+  Agrichampion: {
+    sidebar: "#f39c12",
+    logo: "logo2.png",
+    link: "https://agrichampion.com/"
+  }
 };
-sidebar.style.background = (companyData[company]||companyData.Lucagri).sidebar;
+
+const theme = companyDataFull[company] || companyDataFull.Lucagri;
+
+sidebar.style.background = theme.sidebar;
+logo.src = theme.logo;
+logoLink.href = theme.link;
+
 
 /* ===============================
    CHAT CORE
