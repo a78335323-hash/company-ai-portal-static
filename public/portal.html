@@ -101,133 +101,92 @@ textarea { flex:1; resize:none; padding:14px; border-radius:12px; border:1px sol
 </div>
 <script>
 /* ===============================
-   ACCESSO
-=================================*/
+   BLOCCO LOGIN
+================================= */
 const token = localStorage.getItem("token");
-const storedUser = localStorage.getItem("user");
-if (!token || !storedUser) {
-  window.location.replace("index.html");
-}
-
-const user = storedUser || "Utente";
+const user = localStorage.getItem("user");
 const company = localStorage.getItem("company") || "Lucagri";
 
+if (!token || !user) location.href = "index.html";
+
 /* ===============================
-   ELEMENTI DOM
-=================================*/
+   DOM
+================================= */
 const avatar = document.getElementById("avatar");
 const profileName = document.getElementById("profileName");
 const sidebar = document.getElementById("sidebar");
-const sendBtn = document.getElementById("send");
-const logo = document.getElementById("logo");
-const logoLink = document.getElementById("logoLink");
 const chat = document.getElementById("chat");
 const msg = document.getElementById("msg");
+const sendBtn = document.getElementById("send");
 const inputBox = document.getElementById("inputBox");
-const micBtn = document.getElementById("mic");
 const saveBtn = document.getElementById("saveBtn");
 const downloadBtn = document.getElementById("downloadBtn");
 const chatList = document.getElementById("chatList");
 
-/* ===============================
-   UTENTE
-=================================*/
 avatar.textContent = user.slice(0,2).toUpperCase();
 profileName.textContent = user;
 
 /* ===============================
-   TEMA AZIENDA
-=================================*/
+   THEME
+================================= */
 const companyData = {
-  Lucagri:{sidebar:"linear-gradient(180deg,#7de3a2,#2ecc71)",send:"#2ecc71",logo:"logo.png",link:"https://www.lucagri.it/"},
-  Agrichampion:{sidebar:"linear-gradient(180deg,#ffdba8,#f39c12)",send:"#f39c12",logo:"logo2.png",link:"https://agrichampion.com/"},
-  Cabreganze:{sidebar:"linear-gradient(180deg,#f6e6a8,#d4af37)",send:"#d4af37",logo:"logo3.jpg",link:"https://www.cabreganze.com/"}
+  Lucagri:{sidebar:"#2ecc71"},
+  Agrichampion:{sidebar:"#f39c12"}
 };
-const theme = companyData[company] || companyData.Lucagri;
-sidebar.style.background = theme.sidebar;
-sendBtn.style.background = theme.send;
-logo.src = theme.logo;
-logoLink.href = theme.link;
+sidebar.style.background = (companyData[company]||companyData.Lucagri).sidebar;
 
 /* ===============================
-   CHAT BASE
-=================================*/
+   CHAT CORE
+================================= */
 let chatHistory = [];
-function ai(text){
-  chat.innerHTML += `<div class="msg-ai"><span>${escapeHtml(text)}</span></div>`;
+
+function ai(t){
+  chat.innerHTML += `<div class="msg-ai"><span>${escapeHtml(t)}</span></div>`;
   chat.scrollTop = chat.scrollHeight;
 }
-function userMsg(text){
-  chat.innerHTML += `<div class="msg-user"><span>${escapeHtml(text)}</span></div>`;
+function userMsg(t){
+  chat.innerHTML += `<div class="msg-user"><span>${escapeHtml(t)}</span></div>`;
   chat.scrollTop = chat.scrollHeight;
 }
+
 ai("Come posso aiutarti?");
 
 /* ===============================
    PROMEMORIA STORAGE
-=================================*/
-function remindersKey(){ return `reminders:${company}:${user}`; }
-function loadReminders(){
-  try { return JSON.parse(localStorage.getItem(remindersKey()) || "[]"); }
-  catch { return []; }
-}
-function saveReminders(list){
-  localStorage.setItem(remindersKey(), JSON.stringify(list));
-}
-function addReminder(r){
-  const list = loadReminders();
-  list.unshift(r);
-  saveReminders(list);
-}
-function updateReminder(id, patch){
-  saveReminders(loadReminders().map(r => r.id===id ? {...r,...patch} : r));
-}
-function deleteReminder(id){
-  saveReminders(loadReminders().filter(r => r.id!==id));
-}
+================================= */
+const REM_KEY = `reminders:${company}:${user}`;
+const loadReminders = ()=>JSON.parse(localStorage.getItem(REM_KEY)||"[]");
+const saveReminders = l=>localStorage.setItem(REM_KEY,JSON.stringify(l));
 
 /* ===============================
-   HELPERS
-=================================*/
-function escapeHtml(s){
-  return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
-}
-function formatShort(ts){
-  const d=new Date(ts);
-  return d.toLocaleString("it-IT");
-}
-
-/* ===============================
-   PARSE "RICORDAMI"
-=================================*/
+   PROMEMORIA PARSER
+================================= */
 function tryCreateReminderFromChat(text){
-  if (!text.toLowerCase().startsWith("ricordami")) return null;
-  const now = new Date();
-  const due = new Date(now.getFullYear(),now.getMonth(),now.getDate(),9,0,0).getTime();
-  const clean = text.replace(/^ricordami/i,"").replace(/^di/i,"").trim();
-  if (!clean) return null;
+  const low = text.toLowerCase();
+  if(!low.startsWith("ricordami")) return null;
 
-  const r = {
-    id:`r_${Date.now()}`,
-    text: clean,
-    dueAt: due,
-    createdAt: Date.now(),
+  const item = {
+    id:"r_"+Date.now(),
+    text:text.replace(/ricordami\s*/i,""),
+    dueAt:Date.now(),
     done:false
   };
-  addReminder(r);
-  return r;
+  const list = loadReminders();
+  list.unshift(item);
+  saveReminders(list);
+  return item;
 }
 
 /* ===============================
-   INVIO CHAT
-=================================*/
+   INVIO MESSAGGI (CHAT + PROMEMORIA)
+================================= */
 sendBtn.onclick = async ()=>{
   if(!msg.value.trim()) return;
   const text = msg.value.trim();
   msg.value = "";
 
   const reminder = tryCreateReminderFromChat(text);
-  if (reminder){
+  if(reminder){
     userMsg(text);
     ai("✅ Promemoria creato");
     showPromemoria();
@@ -235,72 +194,82 @@ sendBtn.onclick = async ()=>{
   }
 
   userMsg(text);
-  const loadId = Date.now();
-  chat.innerHTML += `<div class="msg-ai" id="ai_${loadId}"><span>Sto pensando...</span></div>`;
+  chatHistory.push({role:"user",content:text});
+
+  const id = Date.now();
+  chat.innerHTML += `<div class="msg-ai" id="ai_${id}"><span>Sto pensando...</span></div>`;
 
   try{
-    const res = await fetch("https://company-ai-portal-static.onrender.com/chat",{
+    const r = await fetch("https://company-ai-portal-static.onrender.com/chat",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({history:chatHistory})
     });
-    const data = await res.json();
-    document.getElementById(`ai_${loadId}`).innerHTML = `<span>${escapeHtml(data.reply||"Errore")}</span>`;
+    const d = await r.json();
+    document.getElementById(`ai_${id}`).innerHTML =
+      `<span>${escapeHtml(d.reply||"Errore")}</span>`;
+    chatHistory.push({role:"assistant",content:d.reply});
   }catch{
-    document.getElementById(`ai_${loadId}`).innerHTML = `<span>Errore server</span>`;
+    document.getElementById(`ai_${id}`).innerHTML =
+      `<span>Errore connessione</span>`;
   }
 };
 
 /* ===============================
    PROMEMORIA VIEW
-=================================*/
-function row(r){
-  const when = r.dueAt ? ` <small>(${formatShort(r.dueAt)})</small>` : "";
-  return `
-    <div style="border:1px solid #ddd;padding:8px;border-radius:8px;margin:6px 0">
-      <b>${escapeHtml(r.text)}</b>${when}
-      <div style="margin-top:6px">
-        <button data-act="done" data-id="${r.id}">✔️ Fatto</button>
-        <button data-act="delete" data-id="${r.id}">🗑</button>
-      </div>
-    </div>`;
-}
-
+================================= */
 function showPromemoria(){
   const list = loadReminders();
   chat.innerHTML = `
     <h3>Promemoria</h3>
-    ${list.length ? list.map(row).join("") : "<p>Nessun promemoria</p>"}
+    ${list.map(r=>`
+      <div style="padding:10px;border:1px solid #ddd;border-radius:10px;margin:8px 0">
+        <b>${escapeHtml(r.text)}</b><br>
+        <button data-id="${r.id}" data-act="done">✔️ Fatto</button>
+        <button data-id="${r.id}" data-act="delete">🗑</button>
+      </div>
+    `).join("") || "<p>Nessun promemoria</p>"}
   `;
   inputBox.style.display="none";
 }
 
 /* ===============================
-   CLICK PROMEMORIA
-=================================*/
+   PROMEMORIA ACTIONS
+================================= */
 chat.addEventListener("click",e=>{
-  const act=e.target.dataset.act;
-  const id=e.target.dataset.id;
-  if(!act||!id) return;
-  if(act==="delete") deleteReminder(id);
-  if(act==="done") updateReminder(id,{done:true});
+  const id = e.target.dataset.id;
+  const act = e.target.dataset.act;
+  if(!id||!act) return;
+
+  let list = loadReminders();
+  if(act==="done") list = list.filter(r=>r.id!==id);
+  if(act==="delete") list = list.filter(r=>r.id!==id);
+  saveReminders(list);
   showPromemoria();
 });
 
 /* ===============================
-   NAV
-=================================*/
+   HELPERS
+================================= */
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g,m=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"
+  }[m]));
+}
+
+/* ===============================
+   BUTTONS
+================================= */
 document.getElementById("promemoriaBtn").onclick = showPromemoria;
 document.getElementById("newChatBtn").onclick = ()=>{
-  chat.innerHTML="";
+  chat.innerHTML=""; chatHistory=[]; ai("Come posso aiutarti?");
   inputBox.style.display="flex";
-  ai("Come posso aiutarti?");
 };
 document.getElementById("changeUserBtn").onclick = ()=>{
-  localStorage.clear();
-  location.href="index.html";
+  localStorage.clear(); location.href="index.html";
 };
 </script>
+
 
 
 </body>
