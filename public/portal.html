@@ -503,21 +503,41 @@ if (btn) {
 }
 
 
-  function row(r){
-    const when = r.dueAt ? ` <span style="opacity:.75;font-size:12px">(${formatShort(r.dueAt)})</span>` : "";
-    return `
-      <div style="display:flex;gap:10px;align-items:flex-start;padding:10px;border:1px solid #eee;border-radius:10px;margin:8px 0">
-        <input type="checkbox" ${r.done ? "checked" : ""} data-act="toggle" data-id="${r.id}" style="margin-top:3px">
-        <div style="flex:1">
-          <div style="font-size:15px">${escapeHtml(r.text)}${when}</div>
-          <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">
-            <button data-act="tomorrow" data-id="${r.id}" style="padding:6px 10px;border-radius:8px;border:1px solid #ddd;background:#fff;cursor:pointer">Domani</button>
-            <button data-act="delete" data-id="${r.id}" style="padding:6px 10px;border-radius:8px;border:1px solid #ddd;background:#fff;cursor:pointer">Elimina</button>
-          </div>
+function row(r){
+  const when = r.dueAt
+    ? ` <span style="opacity:.75;font-size:12px">(${formatShort(r.dueAt)})</span>`
+    : "";
+
+  const isCall = r.text.toLowerCase().startsWith("chiamare");
+
+  const callActions = (!r.done && isCall) ? `
+    <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
+      <button data-act="call-ok" data-id="${r.id}">✔️ Richiamare</button>
+      <button data-act="call-no" data-id="${r.id}">❌ Non interessato</button>
+      <button data-act="call-mail" data-id="${r.id}">📧 Inviare mail</button>
+      <button data-act="call-wrong" data-id="${r.id}">☎️ Numero errato</button>
+    </div>
+  ` : "";
+
+  return `
+    <div style="display:flex;gap:10px;align-items:flex-start;padding:10px;border:1px solid #eee;border-radius:10px;margin:8px 0">
+      <input type="checkbox" ${r.done ? "checked" : ""} data-act="toggle" data-id="${r.id}" style="margin-top:3px">
+
+      <div style="flex:1">
+        <div style="font-size:15px">
+          ${escapeHtml(r.text)}${when}
         </div>
+
+        <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">
+          <button data-act="tomorrow" data-id="${r.id}">Domani</button>
+          <button data-act="delete" data-id="${r.id}">Elimina</button>
+        </div>
+
+        ${callActions}
       </div>
-    `;
-  }
+    </div>
+  `;
+}
 
   chat.innerHTML = `
     <div style="font-size:17px;line-height:1.7">
@@ -569,6 +589,43 @@ if (btn) {
       const id = cb.getAttribute("data-id");
       updateReminder(id, { done: cb.checked, doneAt: cb.checked ? Date.now() : null });
       showPromemoria();
+      chat.addEventListener("click", (e) => {
+  const btn = e.target;
+  const act = btn.dataset?.act;
+  const id = btn.dataset?.id;
+  if (!act || !id) return;
+
+  if (act === "toggle") {
+    updateReminder(id,{ done: !btn.checked, doneAt: btn.checked ? Date.now() : null });
+  }
+
+  if (act === "tomorrow") {
+    const d = new Date();
+    d.setDate(d.getDate()+1);
+    d.setHours(9,0,0,0);
+    updateReminder(id,{ dueAt: d.getTime() });
+  }
+
+  if (act === "delete") {
+    if(confirm("Eliminare questo promemoria?")) deleteReminder(id);
+  }
+
+  if (act === "call-ok") {
+    updateReminder(id,{ done:true, outcome:"richiamare", doneAt:Date.now() });
+  }
+  if (act === "call-no") {
+    updateReminder(id,{ done:true, outcome:"non_interessato", doneAt:Date.now() });
+  }
+  if (act === "call-mail") {
+    updateReminder(id,{ done:true, outcome:"inviare_mail", doneAt:Date.now() });
+  }
+  if (act === "call-wrong") {
+    updateReminder(id,{ done:true, outcome:"numero_errato", doneAt:Date.now() });
+  }
+
+  showPromemoria();
+});
+
     });
   });
 }
