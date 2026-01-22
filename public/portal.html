@@ -149,14 +149,24 @@ function userMsg(t){
   chat.scrollTop = chat.scrollHeight;
 }
 
-ai("Come posso aiutarti?");
-
 /* ===============================
    PROMEMORIA STORAGE
 ================================= */
 const REM_KEY = `reminders:${company}:${user}`;
 const loadReminders = ()=>JSON.parse(localStorage.getItem(REM_KEY)||"[]");
 const saveReminders = l=>localStorage.setItem(REM_KEY,JSON.stringify(l));
+
+/* ===============================
+   VISTA "OGGI" AUTOMATICA (NUOVO)
+================================= */
+function hasRemindersToday(){
+  const list = loadReminders();
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const end = start + 24*60*60*1000;
+
+  return list.some(r => !r.done && typeof r.dueAt === "number" && r.dueAt >= start && r.dueAt < end);
+}
 
 /* ===============================
    PROMEMORIA PARSER
@@ -175,6 +185,16 @@ function tryCreateReminderFromChat(text){
   list.unshift(item);
   saveReminders(list);
   return item;
+}
+
+/* ===============================
+   AVVIO (NUOVO): OGGI AUTOMATICO
+================================= */
+if (hasRemindersToday()) {
+  showPromemoria();
+} else {
+  ai("Come posso aiutarti?");
+  inputBox.style.display = "flex";
 }
 
 /* ===============================
@@ -269,8 +289,6 @@ document.getElementById("changeUserBtn").onclick = ()=>{
   localStorage.clear(); location.href="index.html";
 };
 </script>
-
-
 
 </body>
 </html>
