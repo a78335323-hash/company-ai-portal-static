@@ -353,12 +353,43 @@ async function showPromemoria(){
    TELEFONATE (placeholder)
 ================================= */
 function showTelefonate(){
-  chat.innerHTML = `<div style="font-size:17px;line-height:1.7">
-    <h3>Telefonate</h3>
-    <p style="opacity:.8">Sezione in preparazione (la colleghiamo alla tabella <b>calls</b> dopo i promemoria).</p>
-  </div>`;
   inputBox.style.display = "none";
+
+  const demoClients = [
+    { id: 1, nome: "Mario Rossi", tipo: "📞 Chiamata", contatto: "333 1234567" },
+    { id: 2, nome: "Azienda Verdi", tipo: "📧 Email", contatto: "info@verdi.it" },
+    { id: 3, nome: "Luigi Bianchi", tipo: "💬 WhatsApp", contatto: "349 9876543" }
+  ];
+
+  chat.innerHTML = `
+    <div style="font-size:17px;line-height:1.7">
+      <h3>Telefonate / Contatti di oggi</h3>
+      <p style="opacity:.8">Lista operatore uscita (demo)</p>
+
+      ${demoClients.map(c => `
+        <div style="padding:12px;border:1px solid #ddd;border-radius:12px;margin:10px 0">
+          <b>${c.nome}</b><br>
+          <span>${c.tipo} – ${c.contatto}</span>
+
+          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+            <button onclick="alert('Azione avviata (demo)')" style="padding:6px 10px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer">
+              Avvia
+            </button>
+
+            <button onclick="alert('Segnato: da richiamare')" style="padding:6px 10px;border-radius:8px;border:1px solid #ccc;background:#fff">
+              Richiamare
+            </button>
+
+            <button onclick="alert('Segnato: non interessato')" style="padding:6px 10px;border-radius:8px;border:1px solid #ccc;background:#fff">
+              Non interessato
+            </button>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  `;
 }
+
 
 /* ===============================
    INVIO MESSAGGI (CHAT + PROMEMORIA)
