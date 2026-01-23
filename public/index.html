@@ -46,11 +46,6 @@ select, input {
     box-sizing: border-box;
 }
 
-#remember {
-    margin-right: -5px;
-    width: auto;
-}
-
 button {
     width: 55%;
     padding: 12px;
@@ -75,15 +70,31 @@ button:disabled {
     text-align: center;
 }
 
-.rememberBox {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 18px;
-    font-size: 13px;
-    white-space: nowrap;
+.rememberBox{
+    display:flex;
+    align-items:center;
+    justify-content:center; /* checkbox + testo centrati */
+    gap:8px;
+    margin-bottom:18px;
+    font-size:13px;
+    white-space:nowrap;
+    cursor:pointer;
+    user-select:none;
 }
+
+.rememberBox input{
+    width:16px;
+    height:16px;
+    margin:0;
+    padding:0;
+    flex:0 0 auto;
+    transform: translateY(1px); /* micro-fix allineamento perfetto */
+}
+
+.rememberBox span{
+    line-height:16px;
+}
+
 
 .password-wrapper {
     position: relative;
@@ -140,10 +151,11 @@ button:disabled {
 
     <div class="error" id="errorMsg"></div>
 
-    <div class="rememberBox">
-        <input type="checkbox" id="remember">
-        <label for="remember">memorizza dati di accesso</label>
-    </div>
+    <label class="rememberBox" for="remember">
+  <input type="checkbox" id="remember">
+  <span>memorizza dati di accesso</span>
+</label>
+
 
     <div class="forgot" onclick="location.href='forgot.html'">
         Hai dimenticato la password?
